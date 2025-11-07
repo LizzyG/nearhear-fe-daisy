@@ -1,0 +1,17 @@
+{
+  "primary": "#2563eb",
+  "primaryContent": "#f8fafc",
+  "secondary": "#10b981",
+  "secondaryContent": "#052e16",
+  "accent": "#f97316",
+  "accentContent": "#2d1203",
+  "neutral": "#64748b",
+  "neutralContent": "#0f172a",
+  "base100": "#f8fafc",
+  "base200": "#e2e8f0",
+  "base300": "#cbd5e1",
+  "info": "#0ea5e9",
+  "success": "#16a34a",
+  "warning": "#f59e0b",
+  "error": "#ef4444"
+}

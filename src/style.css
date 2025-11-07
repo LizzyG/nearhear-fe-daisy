@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family:
+      'Nunito',
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
+    background-color: theme('colors.surface.base100');
+  }
+
+  body {
+    @apply bg-surface-base100 text-content-onNeutral;
+    min-height: 100vh;
+  }
+
+  a {
+    @apply text-brand-primary no-underline transition-colors duration-150;
+  }
+
+  a:hover {
+    @apply text-brand-secondary;
+  }
+}
