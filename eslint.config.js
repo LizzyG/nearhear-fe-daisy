@@ -20,7 +20,7 @@ export default defineConfig(
     files: ['**/*.{ts,tsx,js,jsx,vue}'],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.app.json'],
+        project: ['./tsconfig.eslint.json'],
         tsconfigRootDir,
       },
     },
