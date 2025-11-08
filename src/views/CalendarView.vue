@@ -78,10 +78,16 @@ const handleCityFilterReset = (event: Event) => {
 };
 
 const isCitySelected = (city: SupportedCity) => makeCityKey(city) === selectedCityKey.value;
-const cityLabelClasses = (city: SupportedCity) =>
-  isCitySelected(city)
-    ? 'btn-active bg-brand-primary text-primary-content border border-primary shadow-md shadow-primary/25 hover:bg-primary hover:border-primary '
-    : 'btn-outline border-neutral/40 text-neutral bg-base-100 hover:border-primary/40 hover:text-primary hover:bg-base-200';
+const cityLabelClasses = (city: SupportedCity) => {
+  const base =
+    'font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-base-100';
+
+  if (isCitySelected(city)) {
+    return `${base} btn-primary text-primary-content border border-primary shadow-md shadow-primary/25 hover:bg-primary hover:border-primary`;
+  }
+
+  return `${base} btn-outline border border-base-content/50 text-base-content hover:border-primary hover:text-primary hover:bg-base-200`;
+};
 </script>
 
 <template>

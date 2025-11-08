@@ -7,6 +7,17 @@ import logoUrl from '../../assets/nh-h-c.svg';
 const route = useRoute();
 
 const isActive = (name: string) => route.name === name;
+
+const navLinkClasses = (name: string) => {
+  const base =
+    'relative flex items-center gap-2 border-b-2 border-transparent px-1 pb-2 pt-2 transition-colors';
+
+  if (isActive(name)) {
+    return `${base} text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-primary after:content-['']`;
+  }
+
+  return `${base} text-base-content/70 hover:text-primary hover:border-primary/50`;
+};
 </script>
 
 <template>
@@ -23,12 +34,8 @@ const isActive = (name: string) => route.name === name;
               v-for="link in primaryNavigation"
               :key="link.name"
               :to="link.to"
-              class="flex items-center gap-2 border-b-2 border-transparent px-1 pb-1 pt-2 transition-colors"
-              :class="[
-                isActive(link.name)
-                  ? 'border-primary text-primary'
-                  : 'text-base-content/80 hover:border-primary/40 hover:text-primary',
-              ]"
+              :class="navLinkClasses(link.name)"
+              :aria-current="isActive(link.name) ? 'page' : undefined"
             >
               <img v-if="link.icon" :src="link.icon" :alt="`${link.label} icon`" class="h-5 w-5" />
               <span class="font-medium leading-none">{{ link.label }}</span>
