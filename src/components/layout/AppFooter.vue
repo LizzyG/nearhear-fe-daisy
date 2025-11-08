@@ -7,13 +7,13 @@ const footerLinks = [
 </script>
 
 <template>
-  <footer class="border-t border-surface-base300/70 bg-surface-base200/70 ">
-    <nav class="container mx-auto flex flex-wrap justify-center gap-8 px-4 py-1 text-center text-sm justify-evenly">
+  <footer class="border-base-300/60 bg-base-200/70 border-t">
+    <nav class="container flex flex-wrap justify-evenly gap-8 px-4 py-3 text-center text-sm">
       <a
         v-for="link in footerLinks"
         :key="link.label"
         :href="link.href"
-        class="link-hover text-content-onNeutral/80 transition-colors hover:text-brand-secondary"
+        class="text-base-content/80 link link-hover transition-colors hover:text-secondary"
       >
         {{ link.label }}
       </a>

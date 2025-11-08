@@ -31,23 +31,20 @@ src/
   components/
     layout/        # App shell, navigation, footer, reusable layout primitives
   router/          # Route table and helpers
-  theme/           # Shared color tokens for Tailwind + Vue components
+  styles/          # Tailwind entrypoint + DaisyUI theme definitions
   views/           # Placeholder feature pages wired into the router
   test/            # Vitest setup hooks
 ```
 
 - Routing is defined in `src/router/routes.ts` and consumed by the layout header.
 - Placeholder views live under `src/views` and use DaisyUI cards to indicate upcoming work.
-- Tailwind + DaisyUI are configured in `tailwind.config.cjs`, extending our shared palette.
+- Tailwind + DaisyUI are configured in `tailwind.config.ts`, extending our shared palette.
 
 ## Theming
 
-All color tokens live in `src/theme/colors.json`. They are consumed by:
+Custom themes live in `src/styles/themes.css`. Paste snippets directly from the DaisyUI Theme Builder – the file already contains our default `nearhear` theme and instructions for adding more.
 
-- `tailwind.config.cjs` (Tailwind/DaisyUI theme setup)
-- `src/theme/theme.ts` (typed exports for Vue components)
-
-Update the JSON file to adjust the palette in one place. Tailwind classnames (for example, `bg-surface-base100`, `text-brand-primary`) and DaisyUI themes will update automatically.
+To switch themes at runtime, set the `data-theme` attribute on `html` or any root element (for example, `<html data-theme="cupcake">`). All components rely on DaisyUI tokens (`bg-base-100`, `text-primary`, etc.), so swapping the theme updates the entire interface without extra overrides.
 
 ## Conventions
 

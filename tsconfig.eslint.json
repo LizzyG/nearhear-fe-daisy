@@ -4,8 +4,10 @@
     "src/**/*.ts",
     "src/**/*.vue",
     "vite.config.ts",
+    "tailwind.config.ts",
     "eslint.config.js",
-    "postcss.config.js"
+    "postcss.config.js",
+    "prettier.config.js"
   ]
 }
 

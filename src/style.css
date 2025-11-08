@@ -1,29 +1,36 @@
+@import './styles/themes.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   html {
-    font-family:
-      'Nunito',
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      'Segoe UI',
-      sans-serif;
-    background-color: theme('colors.surface.base100');
+    @apply font-sans;
   }
 
   body {
-    @apply bg-surface-base100 text-content-onNeutral;
-    min-height: 100vh;
+    @apply min-h-screen bg-base-100 text-base-content;
   }
 
   a {
-    @apply text-brand-primary no-underline transition-colors duration-150;
+    @apply text-primary no-underline transition-colors duration-150;
   }
 
-  a:hover {
-    @apply text-brand-secondary;
+  a:hover,
+  a:focus-visible {
+    @apply text-secondary;
+  }
+}
+
+@layer components {
+  :where(.btn):not(.btn-circle):not(.btn-square) {
+    border-radius: var(--radius-selector, 1rem);
+  }
+
+  :where(.input),
+  :where(.select),
+  :where(textarea) {
+    border-radius: var(--radius-field, 1rem);
   }
 }

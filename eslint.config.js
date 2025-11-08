@@ -10,14 +10,20 @@ const tsconfigRootDir = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(
   {
-    ignores: ['dist', 'node_modules'],
+    ignores: [
+      'dist',
+      'node_modules',
+      'tailwind.config.ts',
+      'postcss.config.js',
+      'prettier.config.js',
+    ],
   },
   js.configs.recommended,
   ...pluginVue.configs['flat/recommended'],
   vueTsConfigs.recommendedTypeChecked,
   vuePrettier,
   {
-    files: ['**/*.{ts,tsx,js,jsx,vue}'],
+    files: ['src/**/*.{ts,tsx,js,jsx,vue}'],
     languageOptions: {
       parserOptions: {
         project: ['./tsconfig.eslint.json'],
@@ -28,6 +34,22 @@ export default defineConfig(
       'vue/multi-word-component-names': 'off',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'warn',
+    },
+  },
+  {
+    files: [
+      '*.{config,turbo}.{js,ts}',
+      '*.config.{js,ts,mjs,cjs}',
+      'vite.config.ts',
+      'tailwind.config.ts',
+      'postcss.config.js',
+      'prettier.config.js',
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: null,
+        tsconfigRootDir,
+      },
     },
   },
 );

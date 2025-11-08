@@ -14,7 +14,7 @@ export default defineComponent({
 
 <template>
   <header>
-    <h1 class="text-3xl font-semibold text-content-onNeutral md:text-4xl">
+    <h1 class="text-3xl font-semibold text-base-content md:text-4xl">
       {{ title }}
     </h1>
     <slot />
