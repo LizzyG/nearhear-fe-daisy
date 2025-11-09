@@ -12,9 +12,11 @@
  * See https://daisyui.com/theme-generator/ for details.
  */
 
+@import 'daisyui/theme/synthwave';
+
 @plugin "daisyui/theme" {
   name: "nearhear";
-  default: true;
+  default: false;
   color-scheme: "light";
   prefersdark: false;
 

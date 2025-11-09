@@ -16,6 +16,7 @@
     "coverage": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
+    "cally": "^0.8.0",
     "vue": "^3.5.22",
     "vue-router": "^4.6.3"
   },

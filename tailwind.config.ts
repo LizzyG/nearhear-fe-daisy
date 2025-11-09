@@ -27,7 +27,7 @@ const config: Config = {
   plugins: [daisyui],
   daisyui: {
     logs: false,
-    themes: true,
+    themes: ['synthwave', 'nearhear'],
   },
 };
 

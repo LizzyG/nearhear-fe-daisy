@@ -28,6 +28,21 @@
     border-radius: var(--radius-selector, 1rem);
   }
 
+  .active-filter {
+    @apply btn btn-sm btn-primary btn-active;
+  }
+
+  .inactive-filter {
+    @apply btn btn-sm btn-outline btn-primary border-2 border-primary;
+  }
+  /* .active-filter {
+    @apply badge badge-primary badge-sm badge-primary;
+  }
+
+  .inactive-filter {
+    @apply badge badge-outline badge-sm badge-outline badge-primary border-2 border-primary;
+  } */
+
   :where(.input),
   :where(.select),
   :where(textarea) {
