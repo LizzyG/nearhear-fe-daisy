@@ -7,7 +7,7 @@ import AppMobileDock from '@/components/layout/AppMobileDock.vue';
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col bg-base-100 text-base-content">
+  <div class="flex min-h-screen flex-col bg-base-200 text-base-content">
     <AppHeader />
     <main class="container flex-1 px-4 pb-28 pt-10 md:pb-10">
       <RouterView />

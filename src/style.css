@@ -10,7 +10,7 @@
   }
 
   body {
-    @apply min-h-screen bg-base-100 text-base-content;
+    @apply min-h-screen bg-base-200 text-base-content;
   }
 
   a {

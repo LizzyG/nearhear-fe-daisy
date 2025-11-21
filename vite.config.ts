@@ -19,4 +19,11 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
     },
   },
+  server: {
+    host: '0.0.0.0', // Allow connections from outside container
+    port: 5173,
+    watch: {
+      usePolling: true, // Required for file watching in Docker on some systems
+    },
+  },
 });
