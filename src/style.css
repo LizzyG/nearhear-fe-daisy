@@ -62,4 +62,13 @@
     background-color: transparent !important;
     color: inherit !important;
   }
+
+  /* Ensure calendar popup buttons have all borders visible */
+  .calendar-popup button.btn-outline {
+    border-top-width: 2px !important;
+    border-right-width: 2px !important;
+    border-bottom-width: 2px !important;
+    border-left-width: 2px !important;
+    border-style: solid !important;
+  }
 }

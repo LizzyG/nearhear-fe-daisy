@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
+import FilterChip from '@/components/FilterChip.vue';
 import PageHeader from '../components/layout/PageHeader.vue';
 
 import { resolveApiPath } from '@/config/api';
@@ -111,7 +112,10 @@ interface FullShow {
 }
 
 const supportedCities = ref<SupportedCity[]>([]);
-const selectedCityKey = ref<string | null>(null);
+const STORAGE_KEY = 'nearhear-selected-city';
+const selectedCityKey = ref<string | null>(
+  localStorage.getItem(STORAGE_KEY)
+);
 const formatIsoDate = (value: Date) => value.toISOString().slice(0, 10);
 
 // Format date as local YYYY-MM-DD string (not UTC)
@@ -302,7 +306,7 @@ const venueSearchQuery = ref('');
 const genreSearchQuery = ref('');
 
 const ageRangeStrings: Record<AgeRange, string> = {
-  0: 'All Ages',
+  0: 'Unknown',
   1: '18+',
   2: '21+',
 };
@@ -319,10 +323,6 @@ const formatPrice = (low: number, high: number) => {
 
 const hasPrice = (show: FullShow) => {
   return (show.PriceLow && show.PriceLow > 0) || (show.PriceHigh && show.PriceHigh > 0);
-};
-
-const hasImage = (show: FullShow) => {
-  return !!(show.ImgUrl && show.ImgUrl.trim());
 };
 
 const formatShowDate = (dateString: string, timeZone?: string) => {
@@ -590,18 +590,41 @@ const fetchSupportedCities = async () => {
       return;
     }
 
-    const hasPreviousSelection = selectedCityKey.value
-      ? payload.some((city) => makeCityKey(city) === selectedCityKey.value)
+    // Check if stored city key exists in the loaded cities
+    const storedCityKey = localStorage.getItem(STORAGE_KEY);
+    const hasStoredSelection = storedCityKey
+      ? payload.some((city) => makeCityKey(city) === storedCityKey)
       : false;
 
-    if (!hasPreviousSelection) {
-      const [firstCity] = payload;
-      if (payload.length === 1 && firstCity) {
-        selectedCityKey.value = makeCityKey(firstCity);
+    if (hasStoredSelection && storedCityKey) {
+      // Use stored city if it exists in the loaded cities
+      selectedCityKey.value = storedCityKey;
+      void fetchEvents();
+      void fetchFilters();
+    } else if (!selectedCityKey.value) {
+      // No stored selection, try to find Portland as default
+      const portland = payload.find(
+        (city) => city.City.toLowerCase() === 'portland'
+      );
+      
+      if (portland) {
+        const portlandKey = makeCityKey(portland);
+        selectedCityKey.value = portlandKey;
+        localStorage.setItem(STORAGE_KEY, portlandKey);
         void fetchEvents();
         void fetchFilters();
       } else {
-        selectedCityKey.value = null;
+        // Fallback to first city if Portland not found
+        const [firstCity] = payload;
+        if (payload.length === 1 && firstCity) {
+          const firstCityKey = makeCityKey(firstCity);
+          selectedCityKey.value = firstCityKey;
+          localStorage.setItem(STORAGE_KEY, firstCityKey);
+          void fetchEvents();
+          void fetchFilters();
+        } else {
+          selectedCityKey.value = null;
+        }
       }
     }
   } catch (error) {
@@ -685,6 +708,7 @@ const fetchFilters = async () => {
 
 const handleCityChange = (cityKey: string) => {
   selectedCityKey.value = cityKey;
+  localStorage.setItem(STORAGE_KEY, cityKey);
   void fetchEvents();
   void fetchFilters();
 };
@@ -699,6 +723,7 @@ const resetDateRange = () => {
 
 const handleCityReset = () => {
   selectedCityKey.value = null;
+  localStorage.removeItem(STORAGE_KEY);
   resetDateRange();
   isCalendarOpen.value = false;
   eventsRequestId += 1;
@@ -945,59 +970,79 @@ defineExpose({
       {{ cityLoadError }}
     </p>
 
-    <div ref="pickerRoot" class="relative mt-8 space-y-4">
-      <h2 class="text-base-content/60 text-sm font-semibold uppercase tracking-wide">
-        Pick a date range
-      </h2>
-
+    <div ref="pickerRoot" class="relative mt-8">
       <div class="flex flex-wrap gap-4">
-        <label class="form-control w-full max-w-xs">
-          <span
-            class="label-text text-base-content/60 text-xs font-semibold uppercase tracking-wide"
-          >
-            Date range
-          </span>
+        <div class="relative w-full max-w-xs">
           <input
             type="text"
             readonly
-            class="input-bordered input w-full"
+            class="input-bordered input w-full cursor-pointer bg-base-200 hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
             :value="formattedDateRange"
             placeholder="Select date range"
             @click="openCalendar"
+            @focus="openCalendar"
           />
-        </label>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 pointer-events-none text-base-content/50"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+            />
+          </svg>
+        </div>
       </div>
 
       <transition name="fade">
-        <div v-if="isCalendarOpen" class="relative">
+        <div v-if="isCalendarOpen" class="fixed inset-0 z-50 flex items-start justify-center pt-20 md:pt-32">
+          <!-- Backdrop overlay -->
           <div
-            class="border-base-300/60 bg-base-200/70 cally absolute z-30 w-full max-w-md rounded-2xl border p-4 shadow-lg backdrop-blur"
+            class="fixed inset-0 bg-base-content/20 backdrop-blur-sm"
+            @click="closeCalendar"
+          ></div>
+          
+          <!-- Calendar popup -->
+          <div
+            class="calendar-popup relative z-50 w-fit mx-4 border-2 border-base-300 bg-base-200 rounded-2xl p-4 shadow-2xl"
             @keydown.stop="handleCalendarKeydown"
             @click.stop
           >
-            <calendar-range
-              :value="calendarRangeValue"
-              :first-day-of-week="0"
-              :today="''"
-              @change="handleRangeChange"
-            >
-              <calendar-month></calendar-month>
-            </calendar-range>
+            <div class="overflow-visible">
+              <calendar-range
+                :value="calendarRangeValue"
+                :first-day-of-week="0"
+                :today="''"
+                @change="handleRangeChange"
+              >
+                <calendar-month></calendar-month>
+              </calendar-range>
+            </div>
 
-            <div class="mt-3 flex items-center justify-end gap-2">
-              <button type="button" class="inactive-filter" @click="clearSelection">Clear</button>
-              <button type="button" class="inactive-filter" @click="closeCalendar">Close</button>
+            <div class="mt-4 flex items-center justify-end gap-2 overflow-visible w-full">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline btn-primary"
+                @click="clearSelection"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline btn-primary"
+                @click="closeCalendar"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
       </transition>
-
-      <p v-if="startDate || endDate" class="text-base-content/70 text-sm">
-        Range:
-        <span class="font-semibold text-primary">
-          {{ formattedDateRange }}
-        </span>
-      </p>
     </div>
 
     <!-- Filters Section -->
@@ -1109,73 +1154,28 @@ defineExpose({
     <div v-if="selectedVenues.length > 0 || selectedSpotifyGenres.length > 0 || selectedBroadGenres.length > 0" class="mt-6">
       <div class="flex flex-wrap gap-2">
         <!-- Venue chips -->
-        <div
+        <FilterChip
           v-for="venue in selectedVenues"
           :key="`chip-venue-${venue}`"
-          class="badge badge-primary badge-lg gap-2 cursor-pointer"
-          @click="removeVenue(venue)"
-        >
-          <span>{{ venue }}</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            class="inline-block w-4 h-4 stroke-current"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            ></path>
-          </svg>
-        </div>
+          :label="venue"
+          @remove="removeVenue(venue)"
+        />
 
         <!-- Spotify Genre chips -->
-        <div
+        <FilterChip
           v-for="genre in selectedSpotifyGenres"
           :key="`chip-spotify-${genre}`"
-          class="badge badge-primary badge-lg gap-2 cursor-pointer"
-          @click="removeSpotifyGenre(genre)"
-        >
-          <span>{{ genre }}</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            class="inline-block w-4 h-4 stroke-current"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            ></path>
-          </svg>
-        </div>
+          :label="genre"
+          @remove="removeSpotifyGenre(genre)"
+        />
 
         <!-- Broad Genre chips -->
-        <div
+        <FilterChip
           v-for="genre in selectedBroadGenres"
           :key="`chip-broad-${genre}`"
-          class="badge badge-primary badge-lg gap-2 cursor-pointer"
-          @click="removeBroadGenre(genre)"
-        >
-          <span>{{ genre }}</span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            class="inline-block w-4 h-4 stroke-current"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            ></path>
-          </svg>
-        </div>
+          :label="genre"
+          @remove="removeBroadGenre(genre)"
+        />
       </div>
     </div>
 
@@ -1193,106 +1193,83 @@ defineExpose({
         <div
           v-for="(show, index) in shows"
           :key="index"
-          class="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow"
+          class="card bg-base-200 border-2 border-base-300 shadow-md hover:shadow-lg transition-shadow"
         >
-          <div class="card-body p-3">
-            <div class="flex flex-col md:flex-row md:items-center gap-3">
-              <!-- Image on left (if exists) -->
-              <figure v-if="hasImage(show)" class="flex-shrink-0 w-32 h-32 overflow-hidden rounded-md">
-                <img
-                  :src="show.ImgUrl"
-                  :alt="show.Venue.Name"
-                  class="w-full h-full object-cover"
-                />
-              </figure>
-
-              <!-- Main content: Horizontal layout -->
-              <div class="flex-1 min-w-0">
-                <h2 class="card-title text-base mb-1.5 line-clamp-1">{{ show.Venue.Name }}</h2>
-                <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-                  <p class="text-base-content/80">
-                    <span class="font-semibold">Date:</span> {{ formatShowDate(show.Date) }}
-                  </p>
-                  <p v-if="hasPrice(show)" class="text-base-content/80">
-                    <span class="font-semibold">Price:</span> {{ formatPrice(show.PriceLow, show.PriceHigh) }}
-                  </p>
-                  <p v-if="show.AgeRange !== undefined" class="text-base-content/80">
-                    <span class="font-semibold">Age:</span> {{ ageRangeStrings[show.AgeRange] || 'All Ages' }}
-                  </p>
-                  <p v-if="show.Venue.Address" class="text-base-content/80 truncate max-w-xs">
-                    <span class="font-semibold">Location:</span> {{ show.Venue.Address }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Right side: Artists preview -->
-              <div v-if="show.Artists && show.Artists.length > 0" class="flex-shrink-0">
-                <div class="flex flex-wrap gap-2 justify-end">
-                  <span
-                    v-for="(artist, artistIndex) in show.Artists.slice(0, 3)"
-                    :key="artistIndex"
-                    class="badge badge-primary badge-sm"
-                  >
-                    {{ artist.ArtistName }}
-                  </span>
-                  <span v-if="show.Artists.length > 3" class="badge badge-ghost badge-sm">
-                    +{{ show.Artists.length - 3 }}
-                  </span>
-                </div>
+          <div class="card-body p-4">
+            <!-- Venue and show details at top -->
+            <div class="mb-4 pb-3 border-b border-base-300">
+              <h4 class="text-base font-semibold text-base-content mb-2">{{ show.Venue.Name }}</h4>
+              <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-base-content/80">
+                <p>
+                  <span class="font-semibold">Date:</span> {{ formatShowDate(show.Date) }}
+                </p>
+                <p v-if="hasPrice(show)">
+                  <span class="font-semibold">Price:</span> {{ formatPrice(show.PriceLow, show.PriceHigh) }}
+                </p>
+                <p v-if="show.AgeRange !== undefined && show.AgeRange !== 0">
+                  <span class="font-semibold">Age:</span> {{ ageRangeStrings[show.AgeRange] }}
+                </p>
+                <p v-if="show.Venue.Address" class="truncate max-w-xs">
+                  <span class="font-semibold">Location:</span> {{ show.Venue.Address }}
+                </p>
               </div>
             </div>
 
-            <!-- Expanded artists section -->
-            <div v-if="show.Artists && show.Artists.length > 0" class="mt-3 pt-3 border-t border-base-300">
-              <h3 class="text-base-content/80 font-semibold text-xs mb-2">Artists</h3>
-              <div class="space-y-2">
-                <div
-                  v-for="(artist, artistIndex) in show.Artists"
-                  :key="artistIndex"
-                  class="border-base-300 rounded-md border p-2 bg-base-200/50"
-                >
-                  <h4 class="font-semibold text-xs mb-1.5">{{ artist.ArtistName }}</h4>
-
-                  <div v-if="hasSpotifyTracks(artist)" class="mt-1.5">
-                    <iframe
-                      :src="`https://open.spotify.com/embed/artist/${artist.SpotifyArtistId}?utm_source=generator&theme=0`"
-                      width="100%"
-                      height="80"
-                      frameborder="0"
-                      allowtransparency="true"
-                      allow="encrypted-media"
-                      class="rounded-md"
-                      loading="lazy"
-                    ></iframe>
-                  </div>
-
-                  <!-- Bandcamp album embed (if album data available) -->
-                  <div
-                    v-if="hasBandcampAlbums(artist)"
-                    class="mt-1.5"
-                  >
-                    <iframe
-                      :src="`https://bandcamp.com/EmbeddedPlayer/album=${getFirstAlbumId(artist)}/size=small/bgcol=ffffff/linkcol=0687f5/tracklist=false/transparent=true/`"
-                      seamless
-                      class="w-full h-[120px] border-0 rounded-md"
-                      loading="lazy"
-                    ></iframe>
-                  </div>
-
-                  <!-- Bandcamp artist link (if only slug available, no album data) -->
-                  <div
-                    v-else-if="getBandcampArtistUrl(artist)"
-                    class="mt-1.5"
-                  >
-                    <a
-                      :href="getBandcampArtistUrl(artist)"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="text-primary hover:underline text-sm font-medium"
+            <!-- Artists with embeds -->
+            <div v-if="show.Artists && show.Artists.length > 0" class="space-y-3">
+              <div
+                v-for="(artist, artistIndex) in show.Artists"
+                :key="artistIndex"
+                class="space-y-1.5"
+              >
+                <div class="flex items-start gap-2">
+                  <h3 class="text-lg font-semibold text-base-content flex-shrink-0">{{ artist.ArtistName }}</h3>
+                  <!-- Genres as badges for this artist -->
+                  <div v-if="artist.Genres && artist.Genres.length > 0" class="flex flex-wrap gap-1">
+                    <span
+                      v-for="(genre, genreIndex) in artist.Genres"
+                      :key="genreIndex"
+                      class="badge badge-primary badge-sm"
                     >
-                      Listen on Bandcamp →
-                    </a>
+                      {{ genre }}
+                    </span>
                   </div>
+                </div>
+
+                <!-- Spotify embed -->
+                <div v-if="hasSpotifyTracks(artist)">
+                  <iframe
+                    :src="`https://open.spotify.com/embed/artist/${artist.SpotifyArtistId}?utm_source=generator&theme=0&compact=true`"
+                    width="100%"
+                    height="80"
+                    frameborder="0"
+                    allowtransparency="true"
+                    allow="encrypted-media"
+                    class="rounded-md"
+                    loading="lazy"
+                  ></iframe>
+                </div>
+
+                <!-- Bandcamp album embed (if album data available) -->
+                <div v-if="hasBandcampAlbums(artist)">
+                  <iframe
+                    :src="`https://bandcamp.com/EmbeddedPlayer/album=${getFirstAlbumId(artist)}/size=small/bgcol=ffffff/linkcol=0687f5/tracklist=false/transparent=true/`"
+                    seamless
+                    class="w-full h-[120px] border-0 rounded-md"
+                    loading="lazy"
+                  ></iframe>
+                </div>
+
+                <!-- Bandcamp artist link (if only slug available, no album data) -->
+                <div v-else-if="getBandcampArtistUrl(artist)">
+                  <a
+                    :href="getBandcampArtistUrl(artist)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-primary hover:underline text-sm font-medium"
+                  >
+                    Listen on Bandcamp →
+                  </a>
                 </div>
               </div>
             </div>

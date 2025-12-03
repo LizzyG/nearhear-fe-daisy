@@ -7,7 +7,7 @@ const footerLinks = [
 </script>
 
 <template>
-  <footer class="border-base-300/60 bg-base-200/70 border-t">
+  <footer class="hidden border-base-300/60 bg-base-200/70 border-t md:block">
     <nav class="container flex flex-wrap justify-evenly gap-8 px-4 py-3 text-center text-sm">
       <a
         v-for="link in footerLinks"
