@@ -6,7 +6,6 @@ import PageHeader from '../components/layout/PageHeader.vue';
 
 import { resolveApiPath } from '@/config/api';
 import { apiFetch } from '@/utils/api';
-import filterListIcon from '@/assets/icons/filter-list.svg';
 interface SupportedCity {
   City: string;
   State: string;
@@ -941,9 +940,15 @@ defineExpose({
 
 <template>
   <section>
-    <PageHeader title="Calendar" />
-    <form v-if="supportedCities.length" class="filter gap-2">
-      <input value="X" type="reset" class="inactive-filter px-2" @click.prevent="handleCityReset" />
+    <PageHeader title="Upcoming Events" />
+    <form v-if="supportedCities.length" class="filter gap-2 flex flex-wrap items-center">
+      <button
+        type="button"
+        class="inactive-filter h-9"
+        @click.prevent="handleCityReset"
+      >
+        X
+      </button>
 
       <label
         v-for="city in supportedCities"
@@ -952,6 +957,7 @@ defineExpose({
           'active-filter': makeCityKey(city) === selectedCityKey,
           'inactive-filter': makeCityKey(city) !== selectedCityKey,
         }"
+        class="cursor-pointer"
       >
         <input
           type="radio"
@@ -970,95 +976,49 @@ defineExpose({
       {{ cityLoadError }}
     </p>
 
-    <div ref="pickerRoot" class="relative mt-8">
-      <div class="flex flex-wrap gap-4">
-        <div class="relative w-full max-w-xs">
-          <input
-            type="text"
-            readonly
-            class="input-bordered input w-full cursor-pointer bg-base-200 hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-            :value="formattedDateRange"
-            placeholder="Select date range"
-            @click="openCalendar"
-            @focus="openCalendar"
-          />
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor"
-            class="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 pointer-events-none text-base-content/50"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
-            />
-          </svg>
-        </div>
-      </div>
-
-      <transition name="fade">
-        <div v-if="isCalendarOpen" class="fixed inset-0 z-50 flex items-start justify-center pt-20 md:pt-32">
-          <!-- Backdrop overlay -->
-          <div
-            class="fixed inset-0 bg-base-content/20 backdrop-blur-sm"
-            @click="closeCalendar"
-          ></div>
-          
-          <!-- Calendar popup -->
-          <div
-            class="calendar-popup relative z-50 w-fit mx-4 border-2 border-base-300 bg-base-200 rounded-2xl p-4 shadow-2xl"
-            @keydown.stop="handleCalendarKeydown"
-            @click.stop
-          >
-            <div class="overflow-visible">
-              <calendar-range
-                :value="calendarRangeValue"
-                :first-day-of-week="0"
-                :today="''"
-                @change="handleRangeChange"
+    <!-- Filter Bar: Date picker and filter dropdowns -->
+    <div ref="pickerRoot" class="relative mt-6">
+      <div class="card bg-base-200 border border-base-300 shadow-sm">
+        <div class="card-body p-4">
+          <div class="flex flex-wrap gap-4 items-center">
+            <!-- Date Picker -->
+            <div class="relative w-full max-w-xs">
+              <input
+                type="text"
+                readonly
+                class="input-bordered input w-full cursor-pointer bg-base-100 hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                :value="formattedDateRange"
+                placeholder="Select date range"
+                @click="openCalendar"
+                @focus="openCalendar"
+              />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 pointer-events-none text-base-content/50"
               >
-                <calendar-month></calendar-month>
-              </calendar-range>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+                />
+              </svg>
             </div>
 
-            <div class="mt-4 flex items-center justify-end gap-2 overflow-visible w-full">
-              <button
-                type="button"
-                class="btn btn-sm btn-outline btn-primary"
-                @click="clearSelection"
-              >
-                Clear
-              </button>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline btn-primary"
-                @click="closeCalendar"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      </transition>
-    </div>
-
-    <!-- Filters Section -->
-    <div v-if="filters && (filters.Venues?.length || filters.SpotifyGenres?.length || filters.BroadGenres?.length)" class="mt-8 space-y-4">
-      <h2 class="text-base-content/60 text-sm font-semibold uppercase tracking-wide">
-        Filters
-      </h2>
-
-      <div class="flex flex-wrap gap-4">
-        <!-- Venues Collapse -->
-        <div v-if="filters.Venues && filters.Venues.length > 0" class="collapse collapse-arrow bg-base-200 flex-1 min-w-[280px] max-w-md">
-          <input type="checkbox" />
-          <div class="collapse-title text-sm font-medium flex items-center gap-2 py-2 min-h-0">
-            <img :src="filterListIcon" alt="" class="w-4 h-4" />
-            <span>Venues</span>
-          </div>
+            <!-- Filter Dropdowns -->
+            <template v-if="filters && (filters.Venues?.length || filters.SpotifyGenres?.length || filters.BroadGenres?.length)">
+              <!-- Venues Collapse -->
+              <div v-if="filters.Venues && filters.Venues.length > 0" class="collapse collapse-arrow bg-base-100 flex-1 min-w-[280px] max-w-md">
+                <input type="checkbox" />
+                <div class="collapse-title text-sm font-medium flex items-center gap-2 py-2 min-h-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM4.125 12h.007v.008H4.125V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                  </svg>
+                  <span>Venues</span>
+                </div>
           <div class="collapse-content">
             <div class="space-y-3 pt-2">
               <!-- Search input -->
@@ -1088,13 +1048,16 @@ defineExpose({
           </div>
         </div>
 
-        <!-- Genres Collapse -->
-        <div v-if="(filters.SpotifyGenres && filters.SpotifyGenres.length > 0) || (filters.BroadGenres && filters.BroadGenres.length > 0)" class="collapse collapse-arrow bg-base-200 flex-1 min-w-[280px] max-w-md">
-          <input type="checkbox" />
-          <div class="collapse-title text-sm font-medium flex items-center gap-2 py-2 min-h-0">
-            <img :src="filterListIcon" alt="" class="w-4 h-4" />
-            <span>Genres</span>
-          </div>
+              <!-- Genres Collapse -->
+              <div v-if="(filters.SpotifyGenres && filters.SpotifyGenres.length > 0) || (filters.BroadGenres && filters.BroadGenres.length > 0)" class="collapse collapse-arrow bg-base-100 flex-1 min-w-[280px] max-w-md">
+                <input type="checkbox" />
+                <div class="collapse-title text-sm font-medium flex items-center gap-2 py-2 min-h-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
+                  </svg>
+                  <span>Genres</span>
+                </div>
           <div class="collapse-content">
             <div class="space-y-4 pt-2">
               <!-- Search input -->
@@ -1147,7 +1110,55 @@ defineExpose({
             </div>
           </div>
         </div>
+            </template>
+          </div>
+        </div>
       </div>
+
+      <transition name="fade">
+        <div v-if="isCalendarOpen" class="fixed inset-0 z-50 flex items-start justify-center pt-20 md:pt-32">
+          <!-- Backdrop overlay -->
+          <div
+            class="fixed inset-0 bg-base-content/20 backdrop-blur-sm"
+            @click="closeCalendar"
+          ></div>
+          
+          <!-- Calendar popup -->
+          <div
+            class="calendar-popup relative z-50 w-fit mx-4 border-2 border-base-300 bg-base-200 rounded-2xl p-4 shadow-2xl"
+            @keydown.stop="handleCalendarKeydown"
+            @click.stop
+          >
+            <div class="overflow-visible">
+              <calendar-range
+                :value="calendarRangeValue"
+                :first-day-of-week="0"
+                :today="''"
+                @change="handleRangeChange"
+              >
+                <calendar-month></calendar-month>
+              </calendar-range>
+            </div>
+
+            <div class="mt-4 flex items-center justify-end gap-2 overflow-visible w-full">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline btn-primary"
+                @click="clearSelection"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline btn-primary"
+                @click="closeCalendar"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
     </div>
 
     <!-- Active Filters Chips -->
@@ -1217,59 +1228,73 @@ defineExpose({
 
             <!-- Artists with embeds -->
             <div v-if="show.Artists && show.Artists.length > 0" class="space-y-3">
-              <div
-                v-for="(artist, artistIndex) in show.Artists"
-                :key="artistIndex"
-                class="space-y-1.5"
-              >
-                <div class="flex items-start gap-2">
-                  <h3 class="text-lg font-semibold text-base-content flex-shrink-0">{{ artist.ArtistName }}</h3>
-                  <!-- Genres as badges for this artist -->
-                  <div v-if="artist.Genres && artist.Genres.length > 0" class="flex flex-wrap gap-1">
-                    <span
-                      v-for="(genre, genreIndex) in artist.Genres"
-                      :key="genreIndex"
-                      class="badge badge-primary badge-sm"
-                    >
-                      {{ genre }}
-                    </span>
+              <!-- Tiled artist info and Spotify embeds -->
+              <div class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4 items-end">
+                <div
+                  v-for="(artist, artistIndex) in show.Artists"
+                  :key="artistIndex"
+                  class="flex flex-col"
+                >
+                  <!-- Artist name and genres -->
+                  <div class="mb-2">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <h3 class="text-lg font-semibold text-base-content">{{ artist.ArtistName }}</h3>
+                      <!-- Genres as badges for this artist -->
+                      <div v-if="artist.Genres && artist.Genres.length > 0" class="flex flex-wrap gap-1">
+                        <span
+                          v-for="(genre, genreIndex) in artist.Genres"
+                          :key="genreIndex"
+                          class="badge badge-primary badge-sm"
+                        >
+                          {{ genre }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Spotify embed -->
+                  <div v-if="hasSpotifyTracks(artist)" class="mt-auto">
+                    <iframe
+                      :src="`https://open.spotify.com/embed/artist/${artist.SpotifyArtistId}?utm_source=generator&theme=0&compact=true`"
+                      width="300"
+                      height="80"
+                      frameborder="0"
+                      allowtransparency="true"
+                      allow="encrypted-media"
+                      class="rounded-md"
+                      loading="lazy"
+                    ></iframe>
                   </div>
                 </div>
+              </div>
 
-                <!-- Spotify embed -->
-                <div v-if="hasSpotifyTracks(artist)">
-                  <iframe
-                    :src="`https://open.spotify.com/embed/artist/${artist.SpotifyArtistId}?utm_source=generator&theme=0&compact=true`"
-                    width="100%"
-                    height="80"
-                    frameborder="0"
-                    allowtransparency="true"
-                    allow="encrypted-media"
-                    class="rounded-md"
-                    loading="lazy"
-                  ></iframe>
-                </div>
+              <!-- Bandcamp embeds -->
+              <div class="space-y-2">
+                <div
+                  v-for="(artist, artistIndex) in show.Artists"
+                  :key="`bandcamp-${artistIndex}`"
+                >
+                  <!-- Bandcamp album embed (if album data available) -->
+                  <div v-if="hasBandcampAlbums(artist)">
+                    <iframe
+                      :src="`https://bandcamp.com/EmbeddedPlayer/album=${getFirstAlbumId(artist)}/size=small/bgcol=ffffff/linkcol=0687f5/tracklist=false/transparent=true/`"
+                      seamless
+                      class="w-full h-[120px] border-0 rounded-md"
+                      loading="lazy"
+                    ></iframe>
+                  </div>
 
-                <!-- Bandcamp album embed (if album data available) -->
-                <div v-if="hasBandcampAlbums(artist)">
-                  <iframe
-                    :src="`https://bandcamp.com/EmbeddedPlayer/album=${getFirstAlbumId(artist)}/size=small/bgcol=ffffff/linkcol=0687f5/tracklist=false/transparent=true/`"
-                    seamless
-                    class="w-full h-[120px] border-0 rounded-md"
-                    loading="lazy"
-                  ></iframe>
-                </div>
-
-                <!-- Bandcamp artist link (if only slug available, no album data) -->
-                <div v-else-if="getBandcampArtistUrl(artist)">
-                  <a
-                    :href="getBandcampArtistUrl(artist)"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="text-primary hover:underline text-sm font-medium"
-                  >
-                    Listen on Bandcamp →
-                  </a>
+                  <!-- Bandcamp artist link (if only slug available, no album data) -->
+                  <div v-else-if="getBandcampArtistUrl(artist)">
+                    <a
+                      :href="getBandcampArtistUrl(artist)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-primary hover:underline text-sm font-medium"
+                    >
+                      Listen on Bandcamp →
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>

@@ -13,7 +13,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <header>
+  <header class="mt-4 mb-4">
     <h1 class="text-3xl font-semibold text-base-content md:text-4xl">
       {{ title }}
     </h1>

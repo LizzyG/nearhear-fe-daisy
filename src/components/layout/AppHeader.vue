@@ -12,29 +12,29 @@ const isActive = (name: string) => route.name === name;
 
 const navLinkClasses = (name: string) => {
   const base =
-    'relative flex items-center gap-2 border-b-2 border-transparent px-1 pb-2 pt-2 transition-colors';
+    'flex items-center justify-center gap-2 px-4 py-3 h-12 text-sm font-medium uppercase tracking-wide transition-colors rounded-t-lg';
 
   if (isActive(name)) {
-    return `${base} text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-primary after:content-['']`;
+    return `${base} text-primary border-b-2 border-primary`;
   }
 
-  return `${base} text-base-content/70 hover:text-primary hover:border-primary/50`;
+  return `${base} text-base-content/70 hover:text-primary hover:bg-base-100/50`;
 };
 </script>
 
 <template>
-  <header class="border-base-300/60 bg-base-200/80 sticky top-0 z-40 border-b backdrop-blur hidden md:block">
-    <div class="container mx-auto px-4">
-      <div class="navbar">
+  <header class="bg-base-200 sticky top-0 z-40 border-b border-base-300 shadow-md hidden md:block">
+    <div class="container mx-auto px-3">
+      <div class="navbar py-2">
         <div class="flex-1">
-          <RouterLink to="/" aria-label="Home" class="-my-2 flex items-center pr-3">
+          <RouterLink to="/" aria-label="Home" class="flex items-center pr-2">
             <img :src="logoUrl" alt="NearHear logo" class="h-16 w-auto" />
           </RouterLink>
         </div>
 
         <!-- Main navigation items -->
         <nav class="flex-none">
-          <div class="flex items-center gap-4 text-sm font-medium uppercase tracking-wide">
+          <div class="flex items-end gap-1">
             <RouterLink
               v-for="link in desktopNavItems"
               :key="link.name"
