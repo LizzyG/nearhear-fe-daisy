@@ -10,7 +10,7 @@
   }
 
   body {
-    @apply min-h-screen bg-base-200 text-base-content;
+    @apply min-h-screen bg-base-100 text-base-content;
   }
 
   a {
@@ -47,5 +47,19 @@
   :where(.select),
   :where(textarea) {
     border-radius: var(--radius-field, 1rem);
+  }
+
+  /* Hide today highlight in calendar */
+  calendar-date::part(day),
+  calendar-date button[part*="today"],
+  calendar-date button.today {
+    background-color: transparent !important;
+    color: inherit !important;
+  }
+  
+  /* More specific selector for today button */
+  calendar-date button[aria-current="date"] {
+    background-color: transparent !important;
+    color: inherit !important;
   }
 }

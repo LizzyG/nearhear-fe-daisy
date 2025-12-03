@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { CalendarDate, CalendarMonth } from 'cally';
+import type { CalendarDate, CalendarMonth, CalendarRange } from 'cally';
 
 declare module '*.svg' {
   const src: string;
@@ -17,6 +17,7 @@ declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     'calendar-date': typeof CalendarDate;
     'calendar-month': typeof CalendarMonth;
+    'calendar-range': typeof CalendarRange;
   }
 }
 
