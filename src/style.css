@@ -63,12 +63,43 @@
     color: inherit !important;
   }
 
-  /* Ensure calendar popup buttons have all borders visible */
-  .calendar-popup button.btn-outline {
-    border-top-width: 2px !important;
-    border-right-width: 2px !important;
-    border-bottom-width: 2px !important;
-    border-left-width: 2px !important;
+  /* Consistent button styling */
+  .btn {
+    @apply px-4 py-2 text-sm font-medium border border-solid transition-all;
+  }
+
+  .btn-outline {
+    @apply border-primary bg-transparent text-primary;
     border-style: solid !important;
+    border-width: 2px !important;
+  }
+
+  .btn-outline:hover {
+    @apply bg-primary text-primary-content;
+  }
+
+  .btn-primary {
+    @apply border-primary bg-primary text-primary-content;
+    border-style: solid !important;
+    border-width: 2px !important;
+  }
+
+  .btn-primary:hover {
+    opacity: 0.9;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  /* Checkbox styling - fully outlined and visible */
+  .checkbox {
+    border-width: 2px !important;
+    border-style: solid !important;
+    border-color: hsl(var(--bc) / 0.2) !important;
+  }
+
+  .checkbox:checked {
+    border-color: hsl(var(--p)) !important;
   }
 }
