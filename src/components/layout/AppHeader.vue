@@ -9,17 +9,6 @@ import plusIcon from '../../assets/icons/plus.svg';
 const route = useRoute();
 
 const isActive = (name: string) => route.name === name;
-
-const navLinkClasses = (name: string) => {
-  const base =
-    'btn btn-ghost rounded-b-none rounded-t-xl h-12 px-4 normal-case text-sm font-medium tracking-wide gap-2 border-b-2 border-transparent';
-
-  if (isActive(name)) {
-    return `${base} btn-active text-primary border-primary bg-base-100`;
-  }
-
-  return `${base} text-base-content/70 hover:text-primary hover:bg-base-100/60`;
-};
 </script>
 
 <template>
@@ -34,36 +23,39 @@ const navLinkClasses = (name: string) => {
 
         <!-- Main navigation items -->
         <nav class="flex-none">
-          <div class="flex items-end gap-1">
+          <div role="tablist" class="tabs tabs-border">
             <RouterLink
               v-for="link in desktopNavItems"
               :key="link.name"
               :to="link.path"
-              :class="navLinkClasses(link.name)"
+              role="tab"
+              :class="['tab gap-2 h-12', isActive(link.name) && 'tab-active']"
               :aria-current="isActive(link.name) ? 'page' : undefined"
             >
               <img v-if="link.icon" :src="link.icon" :alt="`${link.label} icon`" class="h-5 w-5" />
-              <span class="font-medium leading-none">{{ link.label }}</span>
+              <span class="font-medium">{{ link.label }}</span>
             </RouterLink>
 
             <!-- Add Events -->
             <RouterLink
               to="/add-events"
-              :class="navLinkClasses('add-events')"
+              role="tab"
+              :class="['tab gap-2 h-12', isActive('add-events') && 'tab-active']"
               :aria-current="isActive('add-events') ? 'page' : undefined"
             >
               <img :src="plusIcon" alt="Add Events icon" class="h-5 w-5" />
-              <span class="font-medium leading-none">Add Events</span>
+              <span class="font-medium">Add Events</span>
             </RouterLink>
 
             <!-- Profile -->
             <RouterLink
               to="/profile"
-              :class="navLinkClasses('profile')"
+              role="tab"
+              :class="['tab gap-2 h-12', isActive('profile') && 'tab-active']"
               :aria-current="isActive('profile') ? 'page' : undefined"
             >
               <img :src="userIcon" alt="Profile icon" class="h-5 w-5" />
-              <span class="font-medium leading-none">Profile</span>
+              <span class="font-medium">Profile</span>
             </RouterLink>
           </div>
         </nav>

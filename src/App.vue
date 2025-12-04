@@ -20,7 +20,7 @@ import AppMobileDock from '@/components/layout/AppMobileDock.vue';
         </div>
       </div>
     </div>
-    <main class="container flex-1 px-4 pb-20 pt-10 md:pb-10 md:pt-6">
+    <main class="container flex-1 px-4 pb-20 pt-4 md:pb-10 md:pt-6">
       <RouterView />
     </main>
     <AppFooter />
