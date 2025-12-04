@@ -47,45 +47,6 @@
     @apply border-primary;
   }
 
-  /* Custom radio button - ring with inner dot */
-  .radio-custom {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    min-width: 20px;
-    min-height: 20px;
-    border: 2px solid currentColor;
-    opacity: 0.4;
-    border-radius: 50%;
-    background-color: transparent;
-    cursor: pointer;
-    position: relative;
-    vertical-align: middle;
-    flex-shrink: 0;
-  }
-
-  .radio-custom:checked {
-    border-color: theme('colors.primary');
-    opacity: 1;
-  }
-
-  .radio-custom:checked::after {
-    content: '';
-    display: block;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background-color: theme('colors.primary');
-  }
-
-
   /* Standard action buttons - outline variant */
   .btn-action-outline {
     @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors;
@@ -104,5 +65,21 @@
 
   .btn-action-solid:hover {
     opacity: 0.9;
+  }
+
+  /* Toggle button - inactive state */
+  .btn-toggle {
+    @apply px-3 py-1.5 text-sm font-medium rounded-lg transition-colors;
+    @apply bg-base-100 border border-base-300 text-base-content;
+  }
+
+  .btn-toggle:hover {
+    @apply border-primary;
+  }
+
+  /* Toggle button - active state */
+  .btn-toggle-active {
+    @apply px-3 py-1.5 text-sm font-medium rounded-lg transition-colors;
+    @apply bg-primary text-primary-content;
   }
 }

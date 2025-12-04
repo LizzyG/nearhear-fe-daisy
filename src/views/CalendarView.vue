@@ -1126,24 +1126,14 @@ defineExpose({
               >
                 <button
                   type="button"
-                  :class="[
-                    'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
-                    filterMode === 'venue-and-genre' 
-                      ? 'bg-primary text-primary-content' 
-                      : 'bg-base-100 border border-base-300 text-base-content hover:border-primary'
-                  ]"
+                  :class="filterMode === 'venue-and-genre' ? 'btn-toggle-active' : 'btn-toggle'"
                   @click="filterMode = 'venue-and-genre'; void fetchEvents()"
                 >
                   AND
                 </button>
                 <button
                   type="button"
-                  :class="[
-                    'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
-                    filterMode === 'venue-or-genre' 
-                      ? 'bg-primary text-primary-content' 
-                      : 'bg-base-100 border border-base-300 text-base-content hover:border-primary'
-                  ]"
+                  :class="filterMode === 'venue-or-genre' ? 'btn-toggle-active' : 'btn-toggle'"
                   @click="filterMode = 'venue-or-genre'; void fetchEvents()"
                 >
                   OR
@@ -1186,14 +1176,14 @@ defineExpose({
           <div class="mt-4 flex items-center justify-end gap-2">
             <button
               type="button"
-              class="btn btn-outline btn-primary btn-sm"
+              class="btn-action-outline"
               @click="clearSelection"
             >
               Clear
             </button>
             <button
               type="button"
-              class="btn btn-ghost btn-sm"
+              class="btn-action-outline"
               @click="closeCalendar"
             >
               Close
