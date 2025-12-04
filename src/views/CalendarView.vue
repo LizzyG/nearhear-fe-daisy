@@ -1055,9 +1055,9 @@ defineExpose({
     <div ref="pickerRoot" class="relative mt-6">
       <div class="card bg-base-200 border border-base-300 shadow-sm">
         <div class="card-body p-4">
-          <div class="flex flex-col md:flex-row flex-wrap gap-4 md:items-end">
+          <div class="flex flex-col md:flex-row flex-wrap gap-4 md:items-center">
             <!-- City Dropdown -->
-            <div v-if="supportedCities.length" class="form-control w-full md:w-auto md:min-w-[200px]">
+            <div v-if="supportedCities.length" class="form-control w-full md:flex-1 md:min-w-[220px]">
               <select
                 :value="selectedCityKey || ''"
                 class="select select-bordered select-sm bg-base-100 h-10 pl-4 w-full"
@@ -1075,7 +1075,7 @@ defineExpose({
             </div>
 
             <!-- Date Picker -->
-            <div class="relative w-full md:w-auto md:min-w-[200px]">
+            <div class="relative w-full md:flex-1 md:min-w-[220px]">
               <input
                 type="text"
                 readonly
@@ -1101,305 +1101,254 @@ defineExpose({
               </svg>
             </div>
 
-            <!-- Filter Buttons -->
+            <!-- Filter Buttons with AND/OR toggle between them -->
             <template v-if="filters && (filters.Venues?.length || filters.SpotifyGenres?.length || filters.BroadGenres?.length)">
               <!-- Venues Filter Button -->
               <button
                 v-if="filters.Venues && filters.Venues.length > 0"
                 type="button"
-                class="btn btn-sm h-10 bg-base-100 border-base-300 hover:border-primary hover:bg-base-200 w-full md:w-auto"
+                class="btn btn-sm h-10 bg-base-100 border-base-300 hover:border-primary hover:bg-base-200 w-full md:w-auto md:min-w-[140px]"
                 @click="openVenuesPanel"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
                 </svg>
                 Venues
-                <span v-if="selectedVenues.length > 0" class="badge badge-primary badge-sm ml-2">
+                <span v-if="selectedVenues.length > 0" class="badge badge-primary badge-sm ml-1">
                   {{ selectedVenues.length }}
                 </span>
               </button>
+
+              <!-- AND/OR Toggle (between Venues and Genres) -->
+              <div 
+                v-if="selectedVenues.length > 0 && (selectedSpotifyGenres.length > 0 || selectedBroadGenres.length > 0)" 
+                class="flex flex-row gap-3 justify-center w-full md:w-auto md:flex-col md:gap-1 md:justify-start"
+              >
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="filter-mode"
+                    value="venue-and-genre"
+                    :checked="filterMode === 'venue-and-genre'"
+                    class="radio-custom"
+                    @change="filterMode = 'venue-and-genre'; void fetchEvents()"
+                  />
+                  <span class="text-sm font-medium">AND</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="filter-mode"
+                    value="venue-or-genre"
+                    :checked="filterMode === 'venue-or-genre'"
+                    class="radio-custom"
+                    @change="filterMode = 'venue-or-genre'; void fetchEvents()"
+                  />
+                  <span class="text-sm font-medium">OR</span>
+                </label>
+              </div>
 
               <!-- Genres Filter Button -->
               <button
                 v-if="(filters.SpotifyGenres && filters.SpotifyGenres.length > 0) || (filters.BroadGenres && filters.BroadGenres.length > 0)"
                 type="button"
-                class="btn btn-sm h-10 bg-base-100 border-base-300 hover:border-primary hover:bg-base-200 w-full md:w-auto"
+                class="btn btn-sm h-10 bg-base-100 border-base-300 hover:border-primary hover:bg-base-200 w-full md:w-auto md:min-w-[140px]"
                 @click="openGenresPanel"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
                 </svg>
                 Genres
-                <span v-if="selectedSpotifyGenres.length + selectedBroadGenres.length > 0" class="badge badge-primary badge-sm ml-2">
+                <span v-if="selectedSpotifyGenres.length + selectedBroadGenres.length > 0" class="badge badge-primary badge-sm ml-1">
                   {{ selectedSpotifyGenres.length + selectedBroadGenres.length }}
                 </span>
               </button>
             </template>
-
-            <!-- Filter Mode Toggle (only show when both venues and genres are selected) -->
-            <div 
-              v-if="selectedVenues.length > 0 && (selectedSpotifyGenres.length > 0 || selectedBroadGenres.length > 0)" 
-              class="w-full md:w-auto flex flex-col md:flex-row md:items-end justify-center md:justify-start gap-2 pt-2 md:pt-0 md:pl-4 md:border-l md:border-base-300"
-            >
-              <div class="flex items-center gap-3 justify-center md:justify-start">
-                <span class="text-sm font-medium text-base-content/70 whitespace-nowrap">Match:</span>
-                <div class="flex items-center gap-3">
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="filter-mode"
-                      value="venue-or-genre"
-                      :checked="filterMode === 'venue-or-genre'"
-                      class="radio radio-primary"
-                      @change="filterMode = 'venue-or-genre'; void fetchEvents()"
-                    />
-                    <span class="text-sm">Any (OR)</span>
-                  </label>
-                  <label class="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="filter-mode"
-                      value="venue-and-genre"
-                      :checked="filterMode === 'venue-and-genre'"
-                      class="radio radio-primary"
-                      @change="filterMode = 'venue-and-genre'; void fetchEvents()"
-                    />
-                    <span class="text-sm">All (AND)</span>
-                  </label>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
-      <transition name="fade">
-        <div v-if="isCalendarOpen" class="fixed inset-0 z-50 flex items-start justify-center pt-20 md:pt-32">
-          <!-- Backdrop overlay -->
-          <div
-            class="fixed inset-0 bg-base-content/20 backdrop-blur-sm"
-            @click="closeCalendar"
-          ></div>
-          
-          <!-- Calendar popup -->
-          <div
-            class="calendar-popup relative z-50 w-fit mx-4 border-2 border-base-300 bg-base-200 rounded-2xl p-4 shadow-2xl"
-            @keydown.stop="handleCalendarKeydown"
-            @click.stop
-          >
-            <div class="overflow-visible">
-              <calendar-range
-                :value="calendarRangeValue"
-                :first-day-of-week="0"
-                :today="''"
-                @change="handleRangeChange"
-              >
-                <calendar-month></calendar-month>
-              </calendar-range>
-            </div>
+      <div :class="['modal', isCalendarOpen && 'modal-open']" @keydown.stop="handleCalendarKeydown">
+        <div class="modal-box max-w-fit bg-base-200 border border-base-300 shadow-lg">
+          <div class="overflow-visible">
+            <calendar-range
+              :value="calendarRangeValue"
+              :first-day-of-week="0"
+              :today="''"
+              @change="handleRangeChange"
+            >
+              <calendar-month></calendar-month>
+            </calendar-range>
+          </div>
 
-            <div class="mt-4 flex items-center justify-end gap-2 overflow-visible w-full">
-              <button
-                type="button"
-                class="btn btn-sm btn-outline btn-primary"
-                @click="clearSelection"
-              >
-                Clear
-              </button>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline btn-primary"
-                @click="closeCalendar"
-              >
-                Close
-              </button>
-            </div>
+          <div class="mt-4 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              class="btn btn-outline btn-primary btn-sm"
+              @click="clearSelection"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              @click="closeCalendar"
+            >
+              Close
+            </button>
           </div>
         </div>
-      </transition>
+        <div class="modal-backdrop" @click="closeCalendar"></div>
+      </div>
     </div>
 
     <!-- Venues Filter Panel -->
-    <transition name="fade">
-      <div v-if="isVenuesPanelOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <!-- Backdrop overlay -->
-        <div
-          class="fixed inset-0 bg-base-content/20 backdrop-blur-sm"
-          @click="closeVenuesPanel"
-        ></div>
-        
-        <!-- Filter Panel -->
-        <div
-          class="relative z-50 flex flex-col bg-base-100 w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl border-2 border-base-300"
-          @click.stop
-        >
-          <!-- Fixed Header -->
-          <div class="flex items-center justify-between p-6 border-b border-base-300 bg-base-200 rounded-t-2xl">
-            <h2 class="text-lg font-semibold">Filter Venues</h2>
-            <button
-              type="button"
-              class="btn btn-ghost btn-square p-2"
-              @click="closeVenuesPanel"
+    <div :class="['modal', isVenuesPanelOpen && 'modal-open']">
+      <div class="modal-box max-w-2xl w-full bg-base-100 border border-base-300 shadow-lg space-y-0">
+        <div class="flex items-center justify-between pb-4 border-b border-base-300">
+          <h2 class="text-lg font-semibold">Filter Venues</h2>
+          <button
+            type="button"
+            class="btn btn-ghost btn-square"
+            @click="closeVenuesPanel"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-6 w-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="py-4">
+          <input
+            v-model="venueSearchQuery"
+            type="text"
+            placeholder="Search venues..."
+            class="input input-bordered w-full"
+          />
+        </div>
+
+        <div class="max-h-[50vh] overflow-y-auto py-2">
+          <div class="space-y-2">
+            <label
+              v-for="venue in filteredVenues"
+              :key="venue"
+              class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 cursor-pointer"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-8 w-8">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+              <input
+                type="checkbox"
+                :checked="isPendingVenueSelected(venue)"
+                class="checkbox checkbox-primary border-base-300"
+                @change="togglePendingVenue(venue)"
+              />
+              <span class="flex-1">{{ venue }}</span>
+            </label>
           </div>
+        </div>
 
-          <!-- Search Input -->
-          <div class="p-6 border-b border-base-300">
-            <input
-              v-model="venueSearchQuery"
-              type="text"
-              placeholder="Search venues..."
-              class="input input-bordered w-full"
-            />
-          </div>
+        <div class="mt-4 pt-4 border-t border-base-300 flex items-center gap-3">
+          <button
+            type="button"
+            class="btn-action-outline flex-1"
+            @click="clearVenuesFilters"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            class="btn-action-solid flex-1"
+            @click="applyVenuesFilters"
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+      <div class="modal-backdrop" @click="closeVenuesPanel"></div>
+    </div>
 
-          <!-- Scrollable Checkbox List -->
-          <div class="flex-1 overflow-y-auto p-6">
-            <div class="space-y-3">
+    <!-- Genres Filter Panel -->
+    <div :class="['modal', isGenresPanelOpen && 'modal-open']">
+      <div class="modal-box max-w-2xl w-full bg-base-100 border border-base-300 shadow-lg space-y-0">
+        <div class="flex items-center justify-between pb-4 border-b border-base-300">
+          <h2 class="text-lg font-semibold">Filter Genres</h2>
+          <button
+            type="button"
+            class="btn btn-ghost btn-square"
+            @click="closeGenresPanel"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-6 w-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="py-4">
+          <input
+            v-model="genreSearchQuery"
+            type="text"
+            placeholder="Search genres..."
+            class="input input-bordered w-full"
+          />
+        </div>
+
+        <div class="max-h-[50vh] overflow-y-auto py-2 space-y-6">
+          <div v-if="filters && filters.SpotifyGenres && filters.SpotifyGenres.length > 0">
+            <h3 class="text-sm font-semibold text-base-content/70 mb-3">Spotify Genres</h3>
+            <div class="space-y-2">
               <label
-                v-for="venue in filteredVenues"
-                :key="venue"
-                class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 cursor-pointer"
+                v-for="genre in filteredSpotifyGenres"
+                :key="`spotify-${genre}`"
+              class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 cursor-pointer"
               >
                 <input
                   type="checkbox"
-                  :checked="isPendingVenueSelected(venue)"
-                  class="checkbox checkbox-primary"
-                  @change="togglePendingVenue(venue)"
+                  :checked="isPendingSpotifyGenreSelected(genre)"
+                class="checkbox checkbox-primary border-base-300"
+                  @change="togglePendingSpotifyGenre(genre)"
                 />
-                <span class="flex-1">{{ venue }}</span>
+                <span class="flex-1">{{ genre }}</span>
               </label>
             </div>
           </div>
 
-          <!-- Fixed Footer -->
-          <div class="flex items-center justify-between p-6 border-t border-base-300 bg-base-200 rounded-b-2xl gap-4">
-            <button
-              type="button"
-              class="btn btn-outline btn-primary flex-1"
-              @click="clearVenuesFilters"
-            >
-              Clear
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary flex-1"
-              @click="applyVenuesFilters"
-            >
-              Apply
-            </button>
-          </div>
-        </div>
-      </div>
-    </transition>
-
-    <!-- Genres Filter Panel -->
-    <transition name="fade">
-      <div v-if="isGenresPanelOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <!-- Backdrop overlay -->
-        <div
-          class="fixed inset-0 bg-base-content/20 backdrop-blur-sm"
-          @click="closeGenresPanel"
-        ></div>
-        
-        <!-- Filter Panel -->
-        <div
-          class="relative z-50 flex flex-col bg-base-100 w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl border-2 border-base-300"
-          @click.stop
-        >
-          <!-- Fixed Header -->
-          <div class="flex items-center justify-between p-6 border-b border-base-300 bg-base-200 rounded-t-2xl">
-            <h2 class="text-lg font-semibold">Filter Genres</h2>
-            <button
-              type="button"
-              class="btn btn-ghost btn-square p-2"
-              @click="closeGenresPanel"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-8 w-8">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          <!-- Search Input -->
-          <div class="p-6 border-b border-base-300">
-            <input
-              v-model="genreSearchQuery"
-              type="text"
-              placeholder="Search genres..."
-              class="input input-bordered w-full"
-            />
-          </div>
-
-          <!-- Scrollable Checkbox List -->
-          <div class="flex-1 overflow-y-auto p-6">
-            <div class="space-y-6">
-              <!-- Spotify Genres -->
-              <div v-if="filters && filters.SpotifyGenres && filters.SpotifyGenres.length > 0">
-                <h3 class="text-sm font-semibold text-base-content/70 mb-4">Spotify Genres</h3>
-                <div class="space-y-3">
-                  <label
-                    v-for="genre in filteredSpotifyGenres"
-                    :key="`spotify-${genre}`"
-                    class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      :checked="isPendingSpotifyGenreSelected(genre)"
-                      class="checkbox checkbox-primary"
-                      @change="togglePendingSpotifyGenre(genre)"
-                    />
-                    <span class="flex-1">{{ genre }}</span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- Broad Genres -->
-              <div v-if="filters && filters.BroadGenres && filters.BroadGenres.length > 0">
-                <h3 class="text-sm font-semibold text-base-content/70 mb-4">Broad Genres</h3>
-                <div class="space-y-3">
-                  <label
-                    v-for="genre in filteredBroadGenres"
-                    :key="`broad-${genre}`"
-                    class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      :checked="isPendingBroadGenreSelected(genre)"
-                      class="checkbox checkbox-primary"
-                      @change="togglePendingBroadGenre(genre)"
-                    />
-                    <span class="flex-1">{{ genre }}</span>
-                  </label>
-                </div>
-              </div>
+          <div v-if="filters && filters.BroadGenres && filters.BroadGenres.length > 0">
+            <h3 class="text-sm font-semibold text-base-content/70 mb-3">Broad Genres</h3>
+            <div class="space-y-2">
+              <label
+                v-for="genre in filteredBroadGenres"
+                :key="`broad-${genre}`"
+              class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  :checked="isPendingBroadGenreSelected(genre)"
+                class="checkbox checkbox-primary border-base-300"
+                  @change="togglePendingBroadGenre(genre)"
+                />
+                <span class="flex-1">{{ genre }}</span>
+              </label>
             </div>
           </div>
+        </div>
 
-          <!-- Fixed Footer -->
-          <div class="flex items-center justify-between p-6 border-t border-base-300 bg-base-200 rounded-b-2xl gap-4">
-            <button
-              type="button"
-              class="btn btn-outline btn-primary flex-1"
-              @click="clearGenresFilters"
-            >
-              Clear
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary flex-1"
-              @click="applyGenresFilters"
-            >
-              Apply
-            </button>
-          </div>
+        <div class="mt-4 pt-4 border-t border-base-300 flex items-center gap-3">
+          <button
+            type="button"
+            class="btn-action-outline flex-1"
+            @click="clearGenresFilters"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            class="btn-action-solid flex-1"
+            @click="applyGenresFilters"
+          >
+            Apply
+          </button>
         </div>
       </div>
-    </transition>
+      <div class="modal-backdrop" @click="closeGenresPanel"></div>
+    </div>
 
     <!-- Active Filters Chips -->
     <div v-if="selectedVenues.length > 0 || selectedSpotifyGenres.length > 0 || selectedBroadGenres.length > 0" class="mt-6">

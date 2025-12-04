@@ -24,31 +24,6 @@
 }
 
 @layer components {
-  :where(.btn):not(.btn-circle):not(.btn-square) {
-    border-radius: var(--radius-selector, 1rem);
-  }
-
-  .active-filter {
-    @apply btn btn-sm btn-primary h-9;
-  }
-
-  .inactive-filter {
-    @apply btn btn-sm btn-ghost h-9 border border-base-300 hover:border-primary hover:bg-base-200;
-  }
-  /* .active-filter {
-    @apply badge badge-primary badge-sm badge-primary;
-  }
-
-  .inactive-filter {
-    @apply badge badge-outline badge-sm badge-outline badge-primary border-2 border-primary;
-  } */
-
-  :where(.input),
-  :where(.select),
-  :where(textarea) {
-    border-radius: var(--radius-field, 1rem);
-  }
-
   /* Hide today highlight in calendar */
   calendar-date::part(day),
   calendar-date button[part*="today"],
@@ -63,43 +38,71 @@
     color: inherit;
   }
 
-  /* Consistent button styling */
-  .btn {
-    @apply px-4 py-2 text-sm font-medium border border-solid transition-all;
-  }
-
-  .btn-outline {
-    @apply border-primary bg-transparent text-primary;
-    border-style: solid;
-    border-width: 2px;
-  }
-
-  .btn-outline:hover {
-    @apply bg-primary text-primary-content;
-  }
-
-  .btn-primary {
-    @apply border-primary bg-primary text-primary-content;
-    border-style: solid;
-    border-width: 2px;
-  }
-
-  .btn-primary:hover {
-    opacity: 0.9;
-  }
-
-  .btn-sm {
-    @apply px-3 py-1.5 text-xs;
-  }
-
-  /* Checkbox styling - fully outlined and visible */
+  /* Checkbox styling */
   .checkbox {
-    border-width: 2px;
-    border-style: solid;
-    border-color: hsl(var(--bc) / 0.2);
+    @apply border border-base-300;
   }
 
   .checkbox:checked {
-    border-color: hsl(var(--p));
+    @apply border-primary;
+  }
+
+  /* Custom radio button - ring with inner dot */
+  .radio-custom {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    border: 2px solid currentColor;
+    opacity: 0.4;
+    border-radius: 50%;
+    background-color: transparent;
+    cursor: pointer;
+    position: relative;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+
+  .radio-custom:checked {
+    border-color: theme('colors.primary');
+    opacity: 1;
+  }
+
+  .radio-custom:checked::after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: theme('colors.primary');
+  }
+
+
+  /* Standard action buttons - outline variant */
+  .btn-action-outline {
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors;
+    @apply bg-transparent border-2 border-primary text-base-content;
+  }
+
+  .btn-action-outline:hover {
+    @apply bg-base-200;
+  }
+
+  /* Standard action buttons - solid variant */
+  .btn-action-solid {
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors;
+    @apply bg-primary border-2 border-primary text-primary-content;
+  }
+
+  .btn-action-solid:hover {
+    opacity: 0.9;
   }
 }

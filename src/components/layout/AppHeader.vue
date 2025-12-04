@@ -12,20 +12,20 @@ const isActive = (name: string) => route.name === name;
 
 const navLinkClasses = (name: string) => {
   const base =
-    'flex items-center justify-center gap-2 px-4 py-3 h-12 text-sm font-medium uppercase tracking-wide transition-colors rounded-t-lg';
+    'btn btn-ghost rounded-b-none rounded-t-xl h-12 px-4 normal-case text-sm font-medium tracking-wide gap-2 border-b-2 border-transparent';
 
   if (isActive(name)) {
-    return `${base} text-primary border-b-2 border-primary`;
+    return `${base} btn-active text-primary border-primary bg-base-100`;
   }
 
-  return `${base} text-base-content/70 hover:text-primary hover:bg-base-100/50`;
+  return `${base} text-base-content/70 hover:text-primary hover:bg-base-100/60`;
 };
 </script>
 
 <template>
   <header class="bg-base-200 sticky top-0 z-40 border-b border-base-300 shadow-md hidden md:block">
     <div class="container mx-auto px-3">
-      <div class="navbar py-2">
+      <div class="navbar py-2 min-h-[4.5rem]">
         <div class="flex-1">
           <RouterLink to="/" aria-label="Home" class="flex items-center pr-2">
             <img :src="logoUrl" alt="NearHear logo" class="h-16 w-auto" />
