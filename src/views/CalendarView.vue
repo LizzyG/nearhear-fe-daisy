@@ -1122,30 +1122,32 @@ defineExpose({
               <!-- AND/OR Toggle (between Venues and Genres) -->
               <div 
                 v-if="selectedVenues.length > 0 && (selectedSpotifyGenres.length > 0 || selectedBroadGenres.length > 0)" 
-                class="flex flex-row gap-3 justify-center w-full md:w-auto md:flex-col md:gap-1 md:justify-start"
+                class="flex flex-row gap-1 justify-center w-full md:w-auto md:flex-col md:justify-start"
               >
-                <label class="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="filter-mode"
-                    value="venue-and-genre"
-                    :checked="filterMode === 'venue-and-genre'"
-                    class="radio-custom"
-                    @change="filterMode = 'venue-and-genre'; void fetchEvents()"
-                  />
-                  <span class="text-sm font-medium">AND</span>
-                </label>
-                <label class="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="filter-mode"
-                    value="venue-or-genre"
-                    :checked="filterMode === 'venue-or-genre'"
-                    class="radio-custom"
-                    @change="filterMode = 'venue-or-genre'; void fetchEvents()"
-                  />
-                  <span class="text-sm font-medium">OR</span>
-                </label>
+                <button
+                  type="button"
+                  :class="[
+                    'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
+                    filterMode === 'venue-and-genre' 
+                      ? 'bg-primary text-primary-content' 
+                      : 'bg-base-100 border border-base-300 text-base-content hover:border-primary'
+                  ]"
+                  @click="filterMode = 'venue-and-genre'; void fetchEvents()"
+                >
+                  AND
+                </button>
+                <button
+                  type="button"
+                  :class="[
+                    'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
+                    filterMode === 'venue-or-genre' 
+                      ? 'bg-primary text-primary-content' 
+                      : 'bg-base-100 border border-base-300 text-base-content hover:border-primary'
+                  ]"
+                  @click="filterMode = 'venue-or-genre'; void fetchEvents()"
+                >
+                  OR
+                </button>
               </div>
 
               <!-- Genres Filter Button -->
