@@ -300,6 +300,9 @@ const selectedVenues = ref<string[]>([]);
 const selectedSpotifyGenres = ref<string[]>([]);
 const selectedBroadGenres = ref<string[]>([]);
 
+// Filter mode: 'venue-or-genre' (default, more results) or 'venue-and-genre' (stricter)
+const filterMode = ref<'venue-or-genre' | 'venue-and-genre'>('venue-or-genre');
+
 // Pending selections for filter panels (before Apply is clicked)
 const pendingVenues = ref<string[]>([]);
 const pendingSpotifyGenres = ref<string[]>([]);
@@ -458,13 +461,13 @@ const buildEventsPayload = (): GetEventsRequest | null => {
   const hasVenues = selectedVenues.value.length > 0;
   const hasGenres = selectedSpotifyGenres.value.length > 0 || selectedBroadGenres.value.length > 0;
   
-  let filterMode = 'none';
+  let filterModeValue = 'none';
   if (hasVenues && hasGenres) {
-    filterMode = 'venue-and-genre';
+    filterModeValue = filterMode.value; // Use the user-selected mode
   } else if (hasVenues) {
-    filterMode = 'venue';
+    filterModeValue = 'venue';
   } else if (hasGenres) {
-    filterMode = 'genre';
+    filterModeValue = 'genre';
   }
 
   const payload: GetEventsRequest = {
@@ -481,7 +484,7 @@ const buildEventsPayload = (): GetEventsRequest | null => {
       TheseFestivals: false,
       MinShows: 0,
       TotalVenues: filters.value?.TotalVenues || 0,
-      FilterMode: filterMode,
+      FilterMode: filterModeValue,
     },
   };
 
@@ -1057,7 +1060,7 @@ defineExpose({
             <div v-if="supportedCities.length" class="form-control w-full md:w-auto md:min-w-[200px]">
               <select
                 :value="selectedCityKey || ''"
-                class="select select-bordered select-sm bg-base-100 h-10 pl-4"
+                class="select select-bordered select-sm bg-base-100 h-10 pl-4 w-full"
                 @change="handleCitySelectChange"
               >
                 <option value="">All Cities</option>
@@ -1132,6 +1135,40 @@ defineExpose({
                 </span>
               </button>
             </template>
+
+            <!-- Filter Mode Toggle (only show when both venues and genres are selected) -->
+            <div 
+              v-if="selectedVenues.length > 0 && (selectedSpotifyGenres.length > 0 || selectedBroadGenres.length > 0)" 
+              class="w-full md:w-auto flex flex-col md:flex-row md:items-end justify-center md:justify-start gap-2 pt-2 md:pt-0 md:pl-4 md:border-l md:border-base-300"
+            >
+              <div class="flex items-center gap-3 justify-center md:justify-start">
+                <span class="text-sm font-medium text-base-content/70 whitespace-nowrap">Match:</span>
+                <div class="flex items-center gap-3">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="filter-mode"
+                      value="venue-or-genre"
+                      :checked="filterMode === 'venue-or-genre'"
+                      class="radio radio-primary"
+                      @change="filterMode = 'venue-or-genre'; void fetchEvents()"
+                    />
+                    <span class="text-sm">Any (OR)</span>
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="filter-mode"
+                      value="venue-and-genre"
+                      :checked="filterMode === 'venue-and-genre'"
+                      class="radio radio-primary"
+                      @change="filterMode = 'venue-and-genre'; void fetchEvents()"
+                    />
+                    <span class="text-sm">All (AND)</span>
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

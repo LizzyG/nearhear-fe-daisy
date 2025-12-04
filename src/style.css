@@ -53,14 +53,14 @@
   calendar-date::part(day),
   calendar-date button[part*="today"],
   calendar-date button.today {
-    background-color: transparent !important;
-    color: inherit !important;
+    background-color: transparent;
+    color: inherit;
   }
   
   /* More specific selector for today button */
   calendar-date button[aria-current="date"] {
-    background-color: transparent !important;
-    color: inherit !important;
+    background-color: transparent;
+    color: inherit;
   }
 
   /* Consistent button styling */
@@ -70,8 +70,8 @@
 
   .btn-outline {
     @apply border-primary bg-transparent text-primary;
-    border-style: solid !important;
-    border-width: 2px !important;
+    border-style: solid;
+    border-width: 2px;
   }
 
   .btn-outline:hover {
@@ -80,8 +80,8 @@
 
   .btn-primary {
     @apply border-primary bg-primary text-primary-content;
-    border-style: solid !important;
-    border-width: 2px !important;
+    border-style: solid;
+    border-width: 2px;
   }
 
   .btn-primary:hover {
@@ -94,12 +94,12 @@
 
   /* Checkbox styling - fully outlined and visible */
   .checkbox {
-    border-width: 2px !important;
-    border-style: solid !important;
-    border-color: hsl(var(--bc) / 0.2) !important;
+    border-width: 2px;
+    border-style: solid;
+    border-color: hsl(var(--bc) / 0.2);
   }
 
   .checkbox:checked {
-    border-color: hsl(var(--p)) !important;
+    border-color: hsl(var(--p));
   }
 }
