@@ -82,4 +82,9 @@
     @apply px-3 py-1.5 text-sm font-medium rounded-lg transition-colors;
     @apply bg-primary text-primary-content;
   }
+
+  /* Alternating row background - light primary tint */
+  .bg-row-alt {
+    background-color: color-mix(in oklch, var(--color-primary) 12%, white);
+  }
 }

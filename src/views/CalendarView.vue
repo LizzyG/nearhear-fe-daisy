@@ -1525,143 +1525,116 @@ defineExpose({
     </div>
 
     <div v-else-if="filteredShows.length > 0" class="mt-8">
-      <!-- Single column horizontal row layout for all events -->
-      <div class="space-y-3">
+      <!-- Alternating row layout for events -->
+      <div class="rounded-lg overflow-hidden border border-base-300">
         <div
           v-for="(show, index) in filteredShows"
           :key="index"
-          class="card bg-base-200 border-2 border-base-300 shadow-md hover:shadow-lg transition-shadow"
+          :class="[
+            'p-4',
+            index % 2 === 0 ? 'bg-base-200' : 'bg-row-alt'
+          ]"
         >
-          <div class="card-body p-4">
-            <!-- Venue and show details at top -->
-            <div class="mb-4 pb-3 border-b border-base-300">
-              <div class="flex items-start justify-between gap-2 mb-2">
-                <h4 class="text-base font-semibold text-base-content">{{ show.Venue.Name }}</h4>
-                <!-- Add to Calendar dropdown -->
-                <div class="dropdown dropdown-end">
-                  <button
-                    type="button"
-                    tabindex="0"
-                    class="btn btn-sm btn-ghost gap-1 text-primary hover:bg-primary/10"
-                    title="Add to Calendar"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
-                    </svg>
-                    <span class="hidden sm:inline">Add to Cal</span>
-                  </button>
-                  <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-lg shadow-lg border border-base-300 w-48 p-2 z-50">
-                    <li>
-                      <button
-                        type="button"
-                        class="flex items-center gap-2"
-                        @click="downloadIcsFile(show)"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                        </svg>
-                        Apple / Outlook
-                      </button>
-                    </li>
-                    <li>
-                      <a
-                        :href="getGoogleCalendarUrl(show)"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="flex items-center gap-2"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
-                        </svg>
-                        Google Calendar
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-base-content/80">
-                <p>
-                  <span class="font-semibold">Date:</span> {{ formatShowDate(show.Date) }}
-                </p>
-                <p v-if="hasPrice(show)">
-                  <span class="font-semibold">Price:</span> {{ formatPrice(show.PriceLow, show.PriceHigh) }}
-                </p>
-                <p v-if="show.AgeRange !== undefined && show.AgeRange !== 0">
-                  <span class="font-semibold">Age:</span> {{ ageRangeStrings[show.AgeRange] }}
-                </p>
-                <p v-if="show.Venue.Address" class="truncate max-w-xs">
-                  <span class="font-semibold">Location:</span> {{ show.Venue.Address }}
-                </p>
+          <!-- Header row: Venue, Date, Actions -->
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
+            <div class="flex-1">
+              <h4 class="text-base font-semibold text-base-content">{{ show.Venue.Name }}</h4>
+              <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-base-content/70 mt-1">
+                <span>{{ formatShowDate(show.Date) }}</span>
+                <span v-if="hasPrice(show)">{{ formatPrice(show.PriceLow, show.PriceHigh) }}</span>
+                <span v-if="show.AgeRange !== undefined && show.AgeRange !== 0">{{ ageRangeStrings[show.AgeRange] }}</span>
+                <span v-if="show.Venue.Address" class="truncate max-w-xs">{{ show.Venue.Address }}</span>
               </div>
             </div>
+            <!-- Add to Calendar dropdown -->
+            <div class="dropdown dropdown-end">
+              <button
+                type="button"
+                tabindex="0"
+                class="btn btn-sm btn-ghost gap-1 text-primary hover:bg-primary/10"
+                title="Add to Calendar"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
+                </svg>
+                <span class="hidden sm:inline">Add to Cal</span>
+              </button>
+              <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-lg shadow-lg border border-base-300 w-48 p-2 z-50">
+                <li>
+                  <button
+                    type="button"
+                    class="flex items-center gap-2"
+                    @click="downloadIcsFile(show)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                    </svg>
+                    Apple / Outlook
+                  </button>
+                </li>
+                <li>
+                  <a
+                    :href="getGoogleCalendarUrl(show)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex items-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                    </svg>
+                    Google Calendar
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
 
-            <!-- Artists with embeds -->
-            <div v-if="show.Artists && show.Artists.length > 0" class="space-y-3">
-              <!-- Tiled artist info and Spotify embeds -->
-              <div class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4 items-end">
-                <div
-                  v-for="(artist, artistIndex) in show.Artists"
-                  :key="artistIndex"
-                  class="flex flex-col"
-                >
-                  <!-- Artist name and genres -->
-                  <div class="mb-2">
-                    <div class="flex items-center gap-2 flex-wrap">
-                      <h3 class="text-lg font-semibold text-base-content">{{ artist.ArtistName }}</h3>
-                      <!-- Genres as badges for this artist -->
-                      <div v-if="artist.Genres && artist.Genres.length > 0" class="flex flex-wrap gap-1">
-                        <span
-                          v-for="(genre, genreIndex) in artist.Genres"
-                          :key="genreIndex"
-                          class="badge badge-primary badge-sm"
-                        >
-                          {{ genre }}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Spotify embed (lazy loaded) -->
-                  <div v-if="hasSpotifyTracks(artist)" class="mt-auto">
-                    <LazyEmbed
-                      :src="`https://open.spotify.com/embed/artist/${artist.SpotifyArtistId}?utm_source=generator&theme=0&compact=true`"
-                      :width="300"
-                      :height="80"
-                      class="rounded-md"
-                    />
-                  </div>
+          <!-- Artists - each artist name above their embed -->
+          <div v-if="show.Artists && show.Artists.length > 0" class="flex flex-wrap gap-4">
+            <div
+              v-for="(artist, artistIndex) in show.Artists"
+              :key="artistIndex"
+              class="flex flex-col"
+            >
+              <!-- Artist name and genres -->
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-medium text-base-content">{{ artist.ArtistName }}</span>
+                <div v-if="artist.Genres && artist.Genres.length > 0" class="flex flex-wrap gap-1">
+                  <span
+                    v-for="(genre, genreIndex) in artist.Genres.slice(0, 2)"
+                    :key="genreIndex"
+                    class="badge badge-primary badge-xs"
+                  >
+                    {{ genre }}
+                  </span>
                 </div>
               </div>
-
-              <!-- Bandcamp embeds -->
-              <div class="space-y-2">
-                <div
-                  v-for="(artist, artistIndex) in show.Artists"
-                  :key="`bandcamp-${artistIndex}`"
-                >
-                  <!-- Bandcamp album embed (lazy loaded) -->
-                  <div v-if="hasBandcampAlbums(artist)">
-                    <LazyEmbed
-                      :src="`https://bandcamp.com/EmbeddedPlayer/album=${getFirstAlbumId(artist)}/size=small/bgcol=ffffff/linkcol=0687f5/tracklist=false/transparent=true/`"
-                      width="100%"
-                      :height="120"
-                      class="border-0 rounded-md"
-                    />
-                  </div>
-
-                  <!-- Bandcamp artist link (if only slug available, no album data) -->
-                  <div v-else-if="getBandcampArtistUrl(artist)">
-                    <a
-                      :href="getBandcampArtistUrl(artist)"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="text-primary hover:underline text-sm font-medium"
-                    >
-                      Listen on Bandcamp →
-                    </a>
-                  </div>
-                </div>
+              <!-- Embed directly below artist name -->
+              <div v-if="hasSpotifyTracks(artist)">
+                <LazyEmbed
+                  :src="`https://open.spotify.com/embed/artist/${artist.SpotifyArtistId}?utm_source=generator&theme=0&compact=true`"
+                  :width="280"
+                  :height="80"
+                  class="rounded-md"
+                />
               </div>
+              <div v-else-if="hasBandcampAlbums(artist)">
+                <LazyEmbed
+                  :src="`https://bandcamp.com/EmbeddedPlayer/album=${getFirstAlbumId(artist)}/size=small/bgcol=ffffff/linkcol=0687f5/tracklist=false/transparent=true/`"
+                  :width="280"
+                  :height="80"
+                  class="border-0 rounded-md"
+                />
+              </div>
+              <a
+                v-else-if="getBandcampArtistUrl(artist)"
+                :href="getBandcampArtistUrl(artist)"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-primary hover:underline text-sm font-medium"
+              >
+                Listen on Bandcamp →
+              </a>
             </div>
           </div>
         </div>
