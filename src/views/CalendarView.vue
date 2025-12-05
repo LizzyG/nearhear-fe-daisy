@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import FilterChip from '@/components/FilterChip.vue';
+import LazyEmbed from '@/components/LazyEmbed.vue';
 import PageHeader from '../components/layout/PageHeader.vue';
 
 import { resolveApiPath } from '@/config/api';
@@ -303,6 +304,13 @@ const selectedBroadGenres = ref<string[]>([]);
 // Filter mode: 'venue-or-genre' (default, more results) or 'venue-and-genre' (stricter)
 const filterMode = ref<'venue-or-genre' | 'venue-and-genre'>('venue-or-genre');
 
+// Search query for filtering by venue or artist name
+const searchQuery = ref('');
+
+// Date range limit warning
+const dateRangeLimitWarning = ref(false);
+const MAX_DATE_RANGE_DAYS = 30;
+
 // Pending selections for filter panels (before Apply is clicked)
 const pendingVenues = ref<string[]>([]);
 const pendingSpotifyGenres = ref<string[]>([]);
@@ -421,6 +429,86 @@ const getBandcampArtistUrl = (artist: ArtistInfo): string | undefined => {
   return undefined;
 };
 
+// Generate Google Calendar URL for an event
+const getGoogleCalendarUrl = (show: FullShow): string => {
+  const artistNames = show.Artists?.map(a => a.ArtistName).join(', ') || 'Live Music';
+  const title = `${artistNames} at ${show.Venue?.Name || 'Venue'}`;
+  
+  // Parse the show date
+  const showDate = new Date(show.Date);
+  
+  // Format dates for Google Calendar (YYYYMMDDTHHmmssZ format)
+  const formatGoogleDate = (date: Date): string => {
+    return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  };
+  
+  // Assume show is ~3 hours
+  const endDate = new Date(showDate.getTime() + 3 * 60 * 60 * 1000);
+  
+  const details = [
+    show.PriceLow || show.PriceHigh ? `Price: ${formatPrice(show.PriceLow, show.PriceHigh)}` : '',
+    show.AgeRange ? `Age: ${ageRangeStrings[show.AgeRange]}` : '',
+    show.Urls?.length ? `Tickets: ${show.Urls[0]}` : '',
+  ].filter(Boolean).join('\\n');
+  
+  const location = show.Venue?.Address || show.Venue?.Name || '';
+  
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${formatGoogleDate(showDate)}/${formatGoogleDate(endDate)}`,
+    details: details,
+    location: location,
+  });
+  
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+};
+
+// Download .ics file for an event
+const downloadIcsFile = (show: FullShow): void => {
+  const artistNames = show.Artists?.map(a => a.ArtistName).join(', ') || 'Live Music';
+  const title = `${artistNames} at ${show.Venue?.Name || 'Venue'}`;
+  
+  const showDate = new Date(show.Date);
+  const endDate = new Date(showDate.getTime() + 3 * 60 * 60 * 1000);
+  
+  const formatIcsDate = (date: Date): string => {
+    return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  };
+  
+  const details = [
+    show.PriceLow || show.PriceHigh ? `Price: ${formatPrice(show.PriceLow, show.PriceHigh)}` : '',
+    show.AgeRange ? `Age: ${ageRangeStrings[show.AgeRange]}` : '',
+    show.Urls?.length ? `Tickets: ${show.Urls[0]}` : '',
+  ].filter(Boolean).join('\\n');
+  
+  const location = show.Venue?.Address || show.Venue?.Name || '';
+  
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//NearHear//Event//EN',
+    'BEGIN:VEVENT',
+    `DTSTART:${formatIcsDate(showDate)}`,
+    `DTEND:${formatIcsDate(endDate)}`,
+    `SUMMARY:${title}`,
+    `DESCRIPTION:${details}`,
+    `LOCATION:${location}`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+  
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.ics`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
 const buildEventsPayload = (): GetEventsRequest | null => {
   console.log('[buildEventsPayload] Starting payload construction');
   console.log('[buildEventsPayload] selectedCity.value:', selectedCity.value);
@@ -471,7 +559,7 @@ const buildEventsPayload = (): GetEventsRequest | null => {
   }
 
   const payload: GetEventsRequest = {
-    ResultCnt: 50,
+    ResultCnt: 10000,
     Page: 1,
     Filter: {
       City: cityPayload,
@@ -777,6 +865,7 @@ const openCalendar = () => {
 
 const closeCalendar = () => {
   isCalendarOpen.value = false;
+  dateRangeLimitWarning.value = false;
 };
 
 const handleRangeChange = (event: Event) => {
@@ -829,6 +918,22 @@ const handleRangeChange = (event: Event) => {
   const parsedStart = parseLocalDate(startValue);
   const parsedEnd = parseLocalDate(endValue);
 
+  // Check if date range exceeds maximum
+  let exceedsLimit = false;
+  if (parsedStart && parsedEnd) {
+    const startDateObj = new Date(parsedStart);
+    const endDateObj = new Date(parsedEnd);
+    const diffDays = Math.ceil((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24));
+    exceedsLimit = diffDays > MAX_DATE_RANGE_DAYS;
+  }
+
+  dateRangeLimitWarning.value = exceedsLimit;
+
+  // If range exceeds limit, don't update dates or fetch - just show warning
+  if (exceedsLimit) {
+    return;
+  }
+
   startDate.value = parsedStart;
   endDate.value = parsedEnd;
 
@@ -847,6 +952,19 @@ const clearSelection = () => {
     void fetchFilters();
   }
 };
+
+// Computed property for shows filtered by search query
+const filteredShows = computed(() => {
+  if (!searchQuery.value.trim()) return shows.value;
+  const query = searchQuery.value.toLowerCase();
+  return shows.value.filter((show) => {
+    // Check venue name
+    if (show.Venue?.Name?.toLowerCase().includes(query)) return true;
+    // Check artist names
+    if (show.Artists?.some((artist) => artist.ArtistName?.toLowerCase().includes(query))) return true;
+    return false;
+  });
+});
 
 // Computed properties for filtered lists
 const filteredVenues = computed(() => {
@@ -1057,7 +1175,7 @@ defineExpose({
         <div class="card-body p-4">
           <div class="flex flex-col md:flex-row flex-wrap gap-4 md:items-center">
             <!-- City Dropdown -->
-            <div v-if="supportedCities.length" class="form-control w-full md:flex-1 md:min-w-[220px]">
+            <div v-if="supportedCities.length" class="form-control w-full md:w-auto md:min-w-[180px]">
               <select
                 :value="selectedCityKey || ''"
                 class="select select-bordered select-sm bg-base-100 h-10 pl-4 w-full"
@@ -1156,6 +1274,26 @@ defineExpose({
                 </span>
               </button>
             </template>
+
+            <!-- Search Input (client-side filtering) -->
+            <div class="relative w-full md:flex-1 md:min-w-[200px]">
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="Search venues or artists..."
+                class="input input-bordered w-full bg-base-100 h-10 pl-10 pr-4"
+              />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 pointer-events-none text-base-content/50"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg>
+            </div>
           </div>
         </div>
       </div>
@@ -1171,6 +1309,13 @@ defineExpose({
             >
               <calendar-month></calendar-month>
             </calendar-range>
+          </div>
+
+          <!-- Date range limit warning -->
+          <div v-if="dateRangeLimitWarning" class="mt-3 p-3 bg-error/10 border border-error/30 rounded-lg max-w-[300px]">
+            <p class="text-error text-sm text-center whitespace-normal break-words">
+              Please select a date range of {{ MAX_DATE_RANGE_DAYS }} days or less.
+            </p>
           </div>
 
           <div class="mt-4 flex items-center justify-end gap-2">
@@ -1379,18 +1524,61 @@ defineExpose({
       <p class="text-base-content/70 text-sm">Loading events…</p>
     </div>
 
-    <div v-else-if="shows.length > 0" class="mt-8">
+    <div v-else-if="filteredShows.length > 0" class="mt-8">
       <!-- Single column horizontal row layout for all events -->
       <div class="space-y-3">
         <div
-          v-for="(show, index) in shows"
+          v-for="(show, index) in filteredShows"
           :key="index"
           class="card bg-base-200 border-2 border-base-300 shadow-md hover:shadow-lg transition-shadow"
         >
           <div class="card-body p-4">
             <!-- Venue and show details at top -->
             <div class="mb-4 pb-3 border-b border-base-300">
-              <h4 class="text-base font-semibold text-base-content mb-2">{{ show.Venue.Name }}</h4>
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <h4 class="text-base font-semibold text-base-content">{{ show.Venue.Name }}</h4>
+                <!-- Add to Calendar dropdown -->
+                <div class="dropdown dropdown-end">
+                  <button
+                    type="button"
+                    tabindex="0"
+                    class="btn btn-sm btn-ghost gap-1 text-primary hover:bg-primary/10"
+                    title="Add to Calendar"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
+                    </svg>
+                    <span class="hidden sm:inline">Add to Cal</span>
+                  </button>
+                  <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-lg shadow-lg border border-base-300 w-48 p-2 z-50">
+                    <li>
+                      <button
+                        type="button"
+                        class="flex items-center gap-2"
+                        @click="downloadIcsFile(show)"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                        </svg>
+                        Apple / Outlook
+                      </button>
+                    </li>
+                    <li>
+                      <a
+                        :href="getGoogleCalendarUrl(show)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="flex items-center gap-2"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                        </svg>
+                        Google Calendar
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
               <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-base-content/80">
                 <p>
                   <span class="font-semibold">Date:</span> {{ formatShowDate(show.Date) }}
@@ -1433,18 +1621,14 @@ defineExpose({
                     </div>
                   </div>
 
-                  <!-- Spotify embed -->
+                  <!-- Spotify embed (lazy loaded) -->
                   <div v-if="hasSpotifyTracks(artist)" class="mt-auto">
-                    <iframe
+                    <LazyEmbed
                       :src="`https://open.spotify.com/embed/artist/${artist.SpotifyArtistId}?utm_source=generator&theme=0&compact=true`"
-                      width="300"
-                      height="80"
-                      frameborder="0"
-                      allowtransparency="true"
-                      allow="encrypted-media"
+                      :width="300"
+                      :height="80"
                       class="rounded-md"
-                      loading="lazy"
-                    ></iframe>
+                    />
                   </div>
                 </div>
               </div>
@@ -1455,14 +1639,14 @@ defineExpose({
                   v-for="(artist, artistIndex) in show.Artists"
                   :key="`bandcamp-${artistIndex}`"
                 >
-                  <!-- Bandcamp album embed (if album data available) -->
+                  <!-- Bandcamp album embed (lazy loaded) -->
                   <div v-if="hasBandcampAlbums(artist)">
-                    <iframe
+                    <LazyEmbed
                       :src="`https://bandcamp.com/EmbeddedPlayer/album=${getFirstAlbumId(artist)}/size=small/bgcol=ffffff/linkcol=0687f5/tracklist=false/transparent=true/`"
-                      seamless
-                      class="w-full h-[120px] border-0 rounded-md"
-                      loading="lazy"
-                    ></iframe>
+                      width="100%"
+                      :height="120"
+                      class="border-0 rounded-md"
+                    />
                   </div>
 
                   <!-- Bandcamp artist link (if only slug available, no album data) -->
@@ -1485,7 +1669,10 @@ defineExpose({
     </div>
 
     <div v-else-if="selectedCity && startDate && endDate" class="mt-8">
-      <p class="text-base-content/70 text-sm">No events found for the selected date range.</p>
+      <p v-if="shows.length > 0 && searchQuery.trim()" class="text-base-content/70 text-sm">
+        No events match "{{ searchQuery }}"
+      </p>
+      <p v-else class="text-base-content/70 text-sm">No events found for the selected date range.</p>
     </div>
   </section>
 </template>
