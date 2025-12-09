@@ -27,4 +27,3 @@ defineEmits<{
     </svg>
   </button>
 </template>
-

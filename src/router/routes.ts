@@ -4,6 +4,9 @@ import { mainNavItems, addMenuItems } from '@/navigation/menu';
 import AddArtistView from '@/views/AddArtistView.vue';
 import AddEventsView from '@/views/AddEventsView.vue';
 import CalendarView from '@/views/CalendarView.vue';
+import AboutView from '@/views/AboutView.vue';
+import FAQView from '@/views/FAQView.vue';
+import MailingListView from '@/views/MailingListView.vue';
 import MapView from '@/views/MapView.vue';
 import PlaylistsView from '@/views/PlaylistsView.vue';
 import ProfileView from '@/views/ProfileView.vue';
@@ -27,10 +30,10 @@ const routeComponentMap: Record<string, RouteRecordRaw['component']> = {
   'add-artist': AddArtistView,
   map: MapView,
   profile: ProfileView,
+  faq: FAQView,
+  about: AboutView,
+  'mailing-list': MailingListView,
   // Placeholder components for more menu items (can be created later)
-  faq: () => Promise.resolve({ default: { template: '<div>FAQ</div>' } }),
-  about: () => Promise.resolve({ default: { template: '<div>About</div>' } }),
-  'mailing-list': () => Promise.resolve({ default: { template: '<div>Mailing List</div>' } }),
   settings: () => Promise.resolve({ default: { template: '<div>Settings</div>' } }),
 };
 

@@ -15,12 +15,12 @@ This document defines the styling patterns used throughout the NearHear frontend
 
 Use the centralized typography classes for consistent heading hierarchy:
 
-| Class | Usage | Example |
-|-------|-------|---------|
-| `.heading-page` | Main page titles | "Upcoming Events", "Profile" |
-| `.heading-section` | Major sections within a page | "Your Shows", grouped content headers |
-| `.heading-card` | Card or modal titles | Filter panel headers, playlist names |
-| `.heading-subsection` | Minor headings, labels | "Spotify Genres", form section labels |
+| Class                 | Usage                        | Example                               |
+| --------------------- | ---------------------------- | ------------------------------------- |
+| `.heading-page`       | Main page titles             | "Upcoming Events", "Profile"          |
+| `.heading-section`    | Major sections within a page | "Your Shows", grouped content headers |
+| `.heading-card`       | Card or modal titles         | Filter panel headers, playlist names  |
+| `.heading-subsection` | Minor headings, labels       | "Spotify Genres", form section labels |
 
 The `PageHeader` component automatically applies `.heading-page` styling.
 
@@ -30,12 +30,12 @@ The `PageHeader` component automatically applies `.heading-page` styling.
 
 ### Custom Button Classes (defined in `src/style.css`)
 
-| Class | Usage |
-|-------|-------|
-| `.btn-action-solid` | Primary actions (Apply, Submit, Save) |
-| `.btn-action-outline` | Secondary actions (Clear, Cancel, Close) |
-| `.btn-action-outline-error` | Destructive actions (Disconnect, Delete) |
-| `.btn-toggle` / `.btn-toggle-active` | Binary toggle pairs (AND/OR, on/off) |
+| Class                                | Usage                                    |
+| ------------------------------------ | ---------------------------------------- |
+| `.btn-action-solid`                  | Primary actions (Apply, Submit, Save)    |
+| `.btn-action-outline`                | Secondary actions (Clear, Cancel, Close) |
+| `.btn-action-outline-error`          | Destructive actions (Disconnect, Delete) |
+| `.btn-toggle` / `.btn-toggle-active` | Binary toggle pairs (AND/OR, on/off)     |
 
 All custom buttons support `:disabled` state with reduced opacity.
 
@@ -65,15 +65,17 @@ For ghost buttons (icon actions):
 
 Use our custom input classes for consistent styling:
 
-| Class | Usage |
-|-------|-------|
-| `.input-primary` | Standard text inputs |
+| Class               | Usage                                    |
+| ------------------- | ---------------------------------------- |
+| `.input-primary`    | Standard text inputs                     |
 | `.input-primary-sm` | Small text inputs (within cards, inline) |
-| `.select-primary` | Dropdown selects |
+| `.select-primary`   | Dropdown selects                         |
 
 ```html
 <input type="text" class="input-primary" placeholder="Search..." />
-<select class="select-primary">...</select>
+<select class="select-primary">
+  ...
+</select>
 ```
 
 For error states on small inputs:
@@ -110,14 +112,14 @@ Use DaisyUI form-control pattern:
 
 Follow these conventions for consistent spacing:
 
-| Context | Class |
-|---------|-------|
-| After page header | `mt-6` |
-| Between major sections | `mt-8` |
-| Within cards/sections | `space-y-4` or `space-y-6` |
-| Form field gaps | `space-y-3` |
-| Button groups | `gap-3` |
-| Filter bar content | `gap-4` |
+| Context                | Class                      |
+| ---------------------- | -------------------------- |
+| After page header      | `mt-6`                     |
+| Between major sections | `mt-8`                     |
+| Within cards/sections  | `space-y-4` or `space-y-6` |
+| Form field gaps        | `space-y-3`                |
+| Button groups          | `gap-3`                    |
+| Filter bar content     | `gap-4`                    |
 
 ---
 
@@ -135,12 +137,10 @@ Use DaisyUI modal pattern with consistent structure:
         <svg><!-- X icon --></svg>
       </button>
     </div>
-    
+
     <!-- Content -->
-    <div class="py-4">
-      ...
-    </div>
-    
+    <div class="py-4">...</div>
+
     <!-- Footer -->
     <div class="flex gap-3 border-t border-base-300 pt-4">
       <button class="btn-action-outline flex-1">Cancel</button>
@@ -152,6 +152,7 @@ Use DaisyUI modal pattern with consistent structure:
 ```
 
 Modal widths:
+
 - Small (date picker, confirmations): `max-w-fit` or `max-w-md`
 - Medium (filter panels): `max-w-2xl`
 - Large (detail views): `max-w-4xl`
@@ -164,9 +165,7 @@ Use DaisyUI card pattern:
 
 ```html
 <div class="card border border-base-300 bg-base-100 shadow-sm">
-  <div class="card-body p-4">
-    ...
-  </div>
+  <div class="card-body p-4">...</div>
 </div>
 ```
 
@@ -174,9 +173,7 @@ For filter/control bars:
 
 ```html
 <div class="card border border-base-300 bg-base-200 shadow-sm">
-  <div class="card-body p-4">
-    ...
-  </div>
+  <div class="card-body p-4">...</div>
 </div>
 ```
 
@@ -258,16 +255,16 @@ Use DaisyUI alerts for error/success/info states:
 
 For external services, use the CSS custom properties defined in `style.css`:
 
-| Service | Text Class | Background Class |
-|---------|-----------|-----------------|
-| Spotify | `.text-spotify` | `.bg-spotify` |
-| Bandcamp | `.text-bandcamp` | `.bg-bandcamp` |
-| Instagram | `.text-instagram` | `.bg-instagram` |
+| Service   | Text Class        | Background Class |
+| --------- | ----------------- | ---------------- |
+| Spotify   | `.text-spotify`   | `.bg-spotify`    |
+| Bandcamp  | `.text-bandcamp`  | `.bg-bandcamp`   |
+| Instagram | `.text-instagram` | `.bg-instagram`  |
 
 Example Spotify button:
 
 ```html
-<button class="btn gap-2 rounded-full bg-spotify text-white hover:bg-spotify-hover">
+<button class="bg-spotify hover:bg-spotify-hover btn gap-2 rounded-full text-white">
   <svg><!-- Spotify icon --></svg>
   Connect with Spotify
 </button>
@@ -279,10 +276,10 @@ Example Spotify button:
 
 Use centralized link classes:
 
-| Class | Usage |
-|-------|-------|
+| Class           | Usage                                       |
+| --------------- | ------------------------------------------- |
 | `.link-primary` | Primary color links with underline on hover |
-| `.link-subtle` | Muted links that brighten on hover |
+| `.link-subtle`  | Muted links that brighten on hover          |
 
 For inline text links, the default `<a>` styling applies (primary color, secondary on hover).
 
@@ -310,11 +307,11 @@ Common patterns:
 ```html
 <!-- Stack on mobile, row on desktop -->
 <div class="flex flex-col gap-4 md:flex-row md:items-center">
-
-<!-- Full width on mobile, auto on desktop -->
-<button class="w-full md:w-auto">
-
-<!-- Hide on mobile, show on desktop -->
-<span class="hidden md:inline">Full Label</span>
-<span class="md:hidden">Short</span>
+  <!-- Full width on mobile, auto on desktop -->
+  <button class="w-full md:w-auto">
+    <!-- Hide on mobile, show on desktop -->
+    <span class="hidden md:inline">Full Label</span>
+    <span class="md:hidden">Short</span>
+  </button>
+</div>
 ```

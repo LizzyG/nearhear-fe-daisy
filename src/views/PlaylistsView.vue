@@ -453,7 +453,7 @@ onMounted(() => {
                 <!-- Spotify Button -->
                 <button
                   type="button"
-                  class="btn btn-ghost btn-sm btn-circle text-spotify hover:bg-spotify/10"
+                  class="text-spotify hover:bg-spotify/10 btn btn-ghost btn-sm btn-circle"
                   title="Open in Spotify"
                   @click.stop="openSpotifyPlaylist(playlist)"
                 >
@@ -532,7 +532,7 @@ onMounted(() => {
               :href="selectedPlaylist.PlaylistLink"
               target="_blank"
               rel="noopener noreferrer"
-              class="mt-3 inline-flex items-center gap-2 rounded-full bg-spotify px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-spotify-hover"
+              class="bg-spotify hover:bg-spotify-hover mt-3 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-white transition-colors"
             >
               <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor">
                 <path

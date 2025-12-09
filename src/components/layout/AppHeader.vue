@@ -41,7 +41,10 @@ const isAddActive = () => addMenuItems.some((item) => route.name === item.name);
               <div
                 tabindex="0"
                 role="tab"
-                :class="['tab h-12 cursor-pointer gap-2', isAddActive() && 'tab-active']"
+                :class="[
+                  'tab h-12 cursor-pointer gap-2 text-primary hover:text-secondary',
+                  isAddActive() && 'tab-active',
+                ]"
               >
                 <img :src="addIcon" alt="Add icon" class="h-5 w-5" />
                 <span class="font-medium">Add</span>

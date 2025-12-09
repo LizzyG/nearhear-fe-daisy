@@ -11,7 +11,9 @@ import AppMobileDock from '@/components/layout/AppMobileDock.vue';
     <!-- Desktop header (hidden on mobile) -->
     <AppHeader />
     <!-- Mobile header with logo only -->
-    <div class="border-base-300/60 bg-base-200/80 sticky top-0 z-40 border-b backdrop-blur md:hidden">
+    <div
+      class="border-base-300/60 bg-base-200/80 sticky top-0 z-40 border-b backdrop-blur md:hidden"
+    >
       <div class="container mx-auto px-4">
         <div class="flex items-center gap-4 py-3">
           <RouterLink to="/" aria-label="Home" class="-my-2 flex items-center pr-3">
