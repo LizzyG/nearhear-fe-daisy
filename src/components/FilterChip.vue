@@ -9,8 +9,9 @@ defineEmits<{
 </script>
 
 <template>
-  <div
-    class="badge badge-primary badge-lg gap-2 cursor-pointer"
+  <button
+    type="button"
+    class="badge badge-primary badge-lg cursor-pointer gap-2"
     @click="$emit('remove')"
   >
     <span>{{ label }}</span>
@@ -18,15 +19,12 @@ defineEmits<{
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
-      class="inline-block w-4 h-4 stroke-current"
+      stroke-width="2"
+      stroke="currentColor"
+      class="h-4 w-4"
     >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M6 18L18 6M6 6l12 12"
-      ></path>
+      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
     </svg>
-  </div>
+  </button>
 </template>
 

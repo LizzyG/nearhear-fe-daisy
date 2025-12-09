@@ -1260,7 +1260,7 @@ defineExpose({
 <template>
   <section>
     <PageHeader title="Upcoming Events" />
-    <p v-if="cityLoadError" class="mt-4 text-sm text-error">
+    <p v-if="cityLoadError" class="mt-6 text-sm text-error">
       {{ cityLoadError }}
     </p>
 

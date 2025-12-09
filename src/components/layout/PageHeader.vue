@@ -13,10 +13,8 @@ export default defineComponent({
 </script>
 
 <template>
-  <header class="mt-4 mb-4">
-    <h1 class="text-3xl font-semibold text-base-content md:text-4xl">
-      {{ title }}
-    </h1>
+  <header class="mb-4 mt-4">
+    <h1 class="heading-page">{{ title }}</h1>
     <slot />
   </header>
 </template>

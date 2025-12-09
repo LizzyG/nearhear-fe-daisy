@@ -4,6 +4,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+   Third-party brand colors
+   ============================================ */
+:root {
+  --color-spotify: #1db954;
+  --color-spotify-hover: #1ed760;
+  --color-bandcamp: #1da0c3;
+  --color-instagram: #e4405f;
+}
+
 @layer base {
   html {
     @apply font-sans;
@@ -124,5 +134,170 @@
   .select-primary:focus {
     @apply border-primary outline-none ring-2;
     --tw-ring-color: color-mix(in oklch, var(--color-primary) 20%, transparent);
+  }
+
+  .select-primary:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  /* Small input variant */
+  .input-primary-sm {
+    @apply w-full rounded-lg border-2 bg-base-100 px-3 py-1.5 text-sm text-base-content transition-all;
+    border-color: color-mix(in oklch, var(--color-primary) 40%, transparent);
+  }
+
+  .input-primary-sm::placeholder {
+    color: color-mix(in oklch, var(--color-base-content) 50%, transparent);
+  }
+
+  .input-primary-sm:hover {
+    border-color: color-mix(in oklch, var(--color-primary) 60%, transparent);
+  }
+
+  .input-primary-sm:focus {
+    @apply border-primary outline-none ring-2;
+    --tw-ring-color: color-mix(in oklch, var(--color-primary) 20%, transparent);
+  }
+
+  .input-primary-sm:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  .input-primary-sm.input-error {
+    @apply border-error;
+  }
+
+  /* ============================================
+     Disabled states for custom buttons
+     ============================================ */
+  .btn-action-outline:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  .btn-action-solid:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  .btn-toggle:disabled,
+  .btn-toggle-active:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  /* ============================================
+     Button variants
+     ============================================ */
+
+  /* Error/destructive outline button variant */
+  .btn-action-outline-error {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors;
+    @apply border-2 border-error bg-transparent text-error;
+  }
+
+  .btn-action-outline-error:hover {
+    background-color: color-mix(in oklch, var(--color-error) 10%, transparent);
+  }
+
+  .btn-action-outline-error:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  /* ============================================
+     Typography scale
+     ============================================ */
+  .heading-page {
+    @apply text-3xl font-semibold text-base-content md:text-4xl;
+  }
+
+  .heading-section {
+    @apply text-xl font-bold text-base-content;
+  }
+
+  .heading-card {
+    @apply text-lg font-semibold text-base-content;
+  }
+
+  .heading-subsection {
+    @apply text-base font-semibold text-base-content;
+  }
+
+  /* ============================================
+     Link variants
+     ============================================ */
+  .link-primary {
+    @apply text-primary hover:underline;
+  }
+
+  .link-subtle {
+    @apply text-base-content/70 transition-colors hover:text-base-content;
+  }
+
+  /* ============================================
+     Third-party brand utilities
+     ============================================ */
+
+  /* Spotify */
+  .text-spotify {
+    color: var(--color-spotify);
+  }
+
+  .bg-spotify {
+    background-color: var(--color-spotify);
+  }
+
+  .hover\:bg-spotify-hover:hover {
+    background-color: var(--color-spotify-hover);
+  }
+
+  .border-spotify {
+    border-color: var(--color-spotify);
+  }
+
+  .border-spotify\/30 {
+    border-color: color-mix(in srgb, var(--color-spotify) 30%, transparent);
+  }
+
+  .bg-spotify\/5 {
+    background-color: color-mix(in srgb, var(--color-spotify) 5%, transparent);
+  }
+
+  .bg-spotify\/10 {
+    background-color: color-mix(in srgb, var(--color-spotify) 10%, transparent);
+  }
+
+  .bg-spotify\/20 {
+    background-color: color-mix(in srgb, var(--color-spotify) 20%, transparent);
+  }
+
+  .hover\:bg-spotify\/10:hover {
+    background-color: color-mix(in srgb, var(--color-spotify) 10%, transparent);
+  }
+
+  /* Bandcamp */
+  .text-bandcamp {
+    color: var(--color-bandcamp);
+  }
+
+  .bg-bandcamp {
+    background-color: var(--color-bandcamp);
+  }
+
+  /* Instagram */
+  .text-instagram {
+    color: var(--color-instagram);
+  }
+
+  .bg-instagram {
+    background-color: var(--color-instagram);
+  }
+
+  /* ============================================
+     Audio player styling
+     ============================================ */
+  .audio-player {
+    @apply rounded-lg;
+  }
+
+  .audio-player::-webkit-media-controls-panel {
+    background-color: oklch(var(--b2));
   }
 }

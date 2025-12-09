@@ -453,7 +453,7 @@ onMounted(() => {
                 <!-- Spotify Button -->
                 <button
                   type="button"
-                  class="btn btn-ghost btn-sm btn-circle text-[#1DB954] hover:bg-[#1DB954]/10"
+                  class="btn btn-ghost btn-sm btn-circle text-spotify hover:bg-spotify/10"
                   title="Open in Spotify"
                   @click.stop="openSpotifyPlaylist(playlist)"
                 >
@@ -532,7 +532,7 @@ onMounted(() => {
               :href="selectedPlaylist.PlaylistLink"
               target="_blank"
               rel="noopener noreferrer"
-              class="mt-3 inline-flex items-center gap-2 rounded-full bg-[#1DB954] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1ed760]"
+              class="mt-3 inline-flex items-center gap-2 rounded-full bg-spotify px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-spotify-hover"
             >
               <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor">
                 <path
@@ -731,14 +731,3 @@ onMounted(() => {
     </div>
   </section>
 </template>
-
-<style scoped>
-/* Audio player styling to match the theme */
-.audio-player {
-  @apply rounded-lg;
-}
-
-.audio-player::-webkit-media-controls-panel {
-  background-color: oklch(var(--b2));
-}
-</style>

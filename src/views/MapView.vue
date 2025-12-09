@@ -349,7 +349,7 @@ onBeforeUnmount(() => {
     <PageHeader title="Venue Map" />
 
     <!-- Controls Bar -->
-    <div class="mt-4">
+    <div class="mt-6">
       <div class="card border border-base-300 bg-base-200 shadow-sm">
         <div class="card-body p-4">
           <div class="flex flex-col gap-4 md:flex-row md:items-center">
