@@ -26,14 +26,14 @@
 @layer components {
   /* Hide today highlight in calendar */
   calendar-date::part(day),
-  calendar-date button[part*="today"],
+  calendar-date button[part*='today'],
   calendar-date button.today {
     background-color: transparent;
     color: inherit;
   }
-  
+
   /* More specific selector for today button */
-  calendar-date button[aria-current="date"] {
+  calendar-date button[aria-current='date'] {
     background-color: transparent;
     color: inherit;
   }
@@ -49,8 +49,8 @@
 
   /* Standard action buttons - outline variant */
   .btn-action-outline {
-    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors;
-    @apply bg-transparent border-2 border-primary text-base-content;
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors;
+    @apply border-2 border-primary bg-transparent text-base-content;
   }
 
   .btn-action-outline:hover {
@@ -59,8 +59,8 @@
 
   /* Standard action buttons - solid variant */
   .btn-action-solid {
-    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors;
-    @apply bg-primary border-2 border-primary text-primary-content;
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors;
+    @apply border-2 border-primary bg-primary text-primary-content;
   }
 
   .btn-action-solid:hover {
@@ -69,8 +69,8 @@
 
   /* Toggle button - inactive state */
   .btn-toggle {
-    @apply px-3 py-1.5 text-sm font-medium rounded-lg transition-colors;
-    @apply bg-base-100 border border-base-300 text-base-content;
+    @apply rounded-lg px-3 py-1.5 text-sm font-medium transition-colors;
+    @apply border border-base-300 bg-base-100 text-base-content;
   }
 
   .btn-toggle:hover {
@@ -79,12 +79,50 @@
 
   /* Toggle button - active state */
   .btn-toggle-active {
-    @apply px-3 py-1.5 text-sm font-medium rounded-lg transition-colors;
+    @apply rounded-lg px-3 py-1.5 text-sm font-medium transition-colors;
     @apply bg-primary text-primary-content;
   }
 
   /* Alternating row background - light primary tint */
   .bg-row-alt {
     background-color: color-mix(in oklch, var(--color-primary) 12%, white);
+  }
+
+  /* Standard input styling - visible with primary accent */
+  .input-primary {
+    @apply w-full rounded-lg border-2 bg-base-100 px-4 py-2 text-base-content transition-all;
+    border-color: color-mix(in oklch, var(--color-primary) 40%, transparent);
+  }
+
+  .input-primary::placeholder {
+    color: color-mix(in oklch, var(--color-base-content) 50%, transparent);
+  }
+
+  .input-primary:hover {
+    border-color: color-mix(in oklch, var(--color-primary) 60%, transparent);
+  }
+
+  .input-primary:focus {
+    @apply border-primary outline-none ring-2;
+    --tw-ring-color: color-mix(in oklch, var(--color-primary) 20%, transparent);
+  }
+
+  .input-primary:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  /* Select dropdown with same styling */
+  .select-primary {
+    @apply w-full cursor-pointer rounded-lg border-2 bg-base-100 px-4 py-2 text-base-content transition-all;
+    border-color: color-mix(in oklch, var(--color-primary) 40%, transparent);
+  }
+
+  .select-primary:hover {
+    border-color: color-mix(in oklch, var(--color-primary) 60%, transparent);
+  }
+
+  .select-primary:focus {
+    @apply border-primary outline-none ring-2;
+    --tw-ring-color: color-mix(in oklch, var(--color-primary) 20%, transparent);
   }
 }

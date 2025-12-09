@@ -19,6 +19,9 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
     },
   },
+  optimizeDeps: {
+    include: ['leaflet'],
+  },
   server: {
     host: '0.0.0.0', // Allow connections from outside container
     port: 5173,

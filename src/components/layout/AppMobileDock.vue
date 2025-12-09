@@ -2,26 +2,38 @@
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import { mobileBottomNavItems, moreMenuItems } from '../../navigation/menu';
+import { mobileBottomNavItems, moreMenuItems, addMenuItems, addIcon } from '../../navigation/menu';
 
 const route = useRoute();
 const router = useRouter();
 
 const isDrawerOpen = ref(false);
+const isAddMenuOpen = ref(false);
 
 const isActive = (name: string) => route.name === name;
+const isAddActive = () => addMenuItems.some((item) => route.name === item.name);
 
 const toggleDrawer = () => {
   isDrawerOpen.value = !isDrawerOpen.value;
+  isAddMenuOpen.value = false;
 };
 
 const closeDrawer = () => {
   isDrawerOpen.value = false;
 };
 
+const toggleAddMenu = () => {
+  isAddMenuOpen.value = !isAddMenuOpen.value;
+};
+
+const handleAddMenuClick = (path: string) => {
+  void router.push(path);
+  isAddMenuOpen.value = false;
+};
+
 const handleMoreMenuItemClick = (item: { path?: string; action?: () => void }) => {
   if (item.path) {
-    router.push(item.path);
+    void router.push(item.path);
   } else if (item.action) {
     item.action();
   }
@@ -30,11 +42,34 @@ const handleMoreMenuItemClick = (item: { path?: string; action?: () => void }) =
 </script>
 
 <template>
+  <!-- Add Menu Popup -->
+  <Teleport to="body">
+    <div v-if="isAddMenuOpen" class="fixed inset-0 z-[60] md:hidden" @click="isAddMenuOpen = false">
+      <div
+        class="absolute bottom-20 left-1/2 w-48 -translate-x-1/2 rounded-lg border border-base-300 bg-base-100 shadow-xl"
+        @click.stop
+      >
+        <ul class="menu p-2">
+          <li v-for="item in addMenuItems" :key="item.name">
+            <button
+              type="button"
+              class="py-3"
+              :class="[isActive(item.name) && 'active']"
+              @click="handleAddMenuClick(item.path)"
+            >
+              {{ item.label }}
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </Teleport>
+
   <!-- Mobile Bottom Navigation -->
   <div
-    class="dock dock-bottom inset-x-0 flex border-t border-base-300/70 bg-base-200/95 shadow-lg md:hidden"
+    class="dock-bottom border-base-300/70 bg-base-200/95 dock inset-x-0 flex border-t shadow-lg md:hidden"
   >
-    <!-- Main 4 navigation items -->
+    <!-- Main navigation items -->
     <RouterLink
       v-for="link in mobileBottomNavItems"
       :key="link.name"
@@ -43,17 +78,32 @@ const handleMoreMenuItemClick = (item: { path?: string; action?: () => void }) =
       :class="[
         isActive(link.name)
           ? 'dock-active text-primary'
-          : 'text-base-content/80 hover:text-primary/70'
+          : 'text-base-content/80 hover:text-primary/70',
       ]"
     >
       <img v-if="link.icon" :src="link.icon" :alt="`${link.label} icon`" class="h-5 w-5" />
       <span class="whitespace-normal break-words leading-snug">{{ link.label }}</span>
     </RouterLink>
 
+    <!-- Add button -->
+    <button
+      type="button"
+      class="dock-item flex flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 text-center text-[11px] uppercase tracking-wide transition-colors"
+      :class="[
+        isAddActive() || isAddMenuOpen
+          ? 'dock-active text-primary'
+          : 'text-base-content/80 hover:text-primary/70',
+      ]"
+      @click="toggleAddMenu"
+    >
+      <img :src="addIcon" alt="Add icon" class="h-5 w-5" />
+      <span class="whitespace-normal break-words leading-snug">Add</span>
+    </button>
+
     <!-- More button -->
     <button
       type="button"
-      class="dock-item flex flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 text-center text-[11px] uppercase tracking-wide transition-colors text-base-content/80 hover:text-primary/70"
+      class="dock-item text-base-content/80 hover:text-primary/70 flex flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 text-center text-[11px] uppercase tracking-wide transition-colors"
       :class="{ 'dock-active text-primary': isDrawerOpen }"
       @click="toggleDrawer"
     >
@@ -77,26 +127,13 @@ const handleMoreMenuItemClick = (item: { path?: string; action?: () => void }) =
 
   <!-- Drawer for More menu -->
   <div class="drawer drawer-end md:hidden">
-    <input
-      id="more-drawer"
-      v-model="isDrawerOpen"
-      type="checkbox"
-      class="drawer-toggle"
-    />
+    <input id="more-drawer" v-model="isDrawerOpen" type="checkbox" class="drawer-toggle" />
     <div class="drawer-side z-50">
-      <label
-        for="more-drawer"
-        class="drawer-overlay"
-        @click="closeDrawer"
-      ></label>
+      <label for="more-drawer" class="drawer-overlay" @click="closeDrawer"></label>
       <div class="min-h-full w-screen bg-base-200 p-4 text-base-content">
         <!-- Close button in top right -->
-        <div class="flex justify-end mb-4">
-          <button
-            type="button"
-            class="btn btn-ghost btn-square"
-            @click="closeDrawer"
-          >
+        <div class="mb-4 flex justify-end">
+          <button type="button" class="btn btn-ghost btn-square" @click="closeDrawer">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -105,31 +142,20 @@ const handleMoreMenuItemClick = (item: { path?: string; action?: () => void }) =
               stroke="currentColor"
               class="h-6 w-6"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
         <!-- Menu items -->
         <ul class="menu text-lg">
-          <li
-            v-for="item in moreMenuItems"
-            :key="item.name"
-          >
-            <a
-              v-if="item.path"
-              class="py-4 text-lg"
-              @click.prevent="handleMoreMenuItemClick(item)"
-            >
+          <li v-for="item in moreMenuItems" :key="item.name">
+            <a v-if="item.path" class="py-4 text-lg" @click.prevent="handleMoreMenuItemClick(item)">
               {{ item.label }}
             </a>
             <button
               v-else-if="item.action"
               type="button"
-              class="py-4 text-lg text-left w-full"
+              class="w-full py-4 text-left text-lg"
               @click="handleMoreMenuItemClick(item)"
             >
               {{ item.label }}
@@ -140,5 +166,3 @@ const handleMoreMenuItemClick = (item: { path?: string; action?: () => void }) =
     </div>
   </div>
 </template>
-
-

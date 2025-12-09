@@ -1,11 +1,12 @@
 import type { RouteRecordRaw } from 'vue-router';
 
-import { mainNavItems } from '@/navigation/menu';
+import { mainNavItems, addMenuItems } from '@/navigation/menu';
+import AddArtistView from '@/views/AddArtistView.vue';
 import AddEventsView from '@/views/AddEventsView.vue';
 import CalendarView from '@/views/CalendarView.vue';
 import MapView from '@/views/MapView.vue';
 import PlaylistsView from '@/views/PlaylistsView.vue';
-import YourShowsView from '@/views/YourShowsView.vue';
+import ProfileView from '@/views/ProfileView.vue';
 
 export interface AppRouteMeta {
   label: string;
@@ -22,11 +23,11 @@ declare module 'vue-router' {
 const routeComponentMap: Record<string, RouteRecordRaw['component']> = {
   calendar: CalendarView,
   playlists: PlaylistsView,
-  'your-shows': YourShowsView,
   'add-events': AddEventsView,
+  'add-artist': AddArtistView,
   map: MapView,
+  profile: ProfileView,
   // Placeholder components for more menu items (can be created later)
-  profile: () => Promise.resolve({ default: { template: '<div>Profile</div>' } }),
   faq: () => Promise.resolve({ default: { template: '<div>FAQ</div>' } }),
   about: () => Promise.resolve({ default: { template: '<div>About</div>' } }),
   'mailing-list': () => Promise.resolve({ default: { template: '<div>Mailing List</div>' } }),
@@ -53,6 +54,23 @@ export const appRoutes: RouteRecordRaw[] = [
       meta: {
         label: item.label,
         showInNav: true,
+      },
+    };
+  }),
+  // Add menu routes
+  ...addMenuItems.map((item) => {
+    const component = routeComponentMap[item.name];
+
+    if (!component) {
+      throw new Error(`Missing component mapping for route "${item.name}"`);
+    }
+
+    return {
+      path: item.path,
+      name: item.name,
+      component,
+      meta: {
+        label: item.label,
       },
     };
   }),

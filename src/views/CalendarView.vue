@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 
 import FilterChip from '@/components/FilterChip.vue';
 import LazyEmbed from '@/components/LazyEmbed.vue';
@@ -7,6 +8,8 @@ import PageHeader from '../components/layout/PageHeader.vue';
 
 import { resolveApiPath } from '@/config/api';
 import { apiFetch } from '@/utils/api';
+
+const route = useRoute();
 interface SupportedCity {
   City: string;
   State: string;
@@ -113,9 +116,7 @@ interface FullShow {
 
 const supportedCities = ref<SupportedCity[]>([]);
 const STORAGE_KEY = 'nearhear-selected-city';
-const selectedCityKey = ref<string | null>(
-  localStorage.getItem(STORAGE_KEY)
-);
+const selectedCityKey = ref<string | null>(localStorage.getItem(STORAGE_KEY));
 const formatIsoDate = (value: Date) => value.toISOString().slice(0, 10);
 
 // Format date as local YYYY-MM-DD string (not UTC)
@@ -142,8 +143,8 @@ const cityLoadError = ref<string | null>(null);
 const isCalendarOpen = ref(false);
 const pickerRoot = ref<HTMLElement | null>(null);
 
-const cityEndpoint = resolveApiPath('/media/getSupportedCities');
-const filtersEndpoint = resolveApiPath('/media/getFilters');
+const cityEndpoint = '/media/getSupportedCities';
+const filtersEndpoint = '/media/getFilters';
 
 const makeCityKey = (city: SupportedCity) => `${city.City}-${city.StateAbbrev}`;
 
@@ -155,20 +156,28 @@ const formatDate = (value: string, timeZone?: string) => {
   try {
     // Use city timezone if provided, otherwise use browser's local timezone
     const tz = timeZone || selectedCity.value?.TzName || undefined;
-    
+
     // Parse date string (YYYY-MM-DD) as a local date to avoid UTC conversion issues
     const dateParts = value.split('-').map(Number);
     let date: Date;
     const year = dateParts[0];
     const month = dateParts[1];
     const day = dateParts[2];
-    if (dateParts.length === 3 && year !== undefined && month !== undefined && day !== undefined && !Number.isNaN(year) && !Number.isNaN(month) && !Number.isNaN(day)) {
+    if (
+      dateParts.length === 3 &&
+      year !== undefined &&
+      month !== undefined &&
+      day !== undefined &&
+      !Number.isNaN(year) &&
+      !Number.isNaN(month) &&
+      !Number.isNaN(day)
+    ) {
       // Create date in local timezone (will be formatted in city timezone)
       date = new Date(year, month - 1, day);
     } else {
       date = new Date(value);
     }
-    
+
     return new Intl.DateTimeFormat(undefined, {
       dateStyle: 'medium',
       timeZone: tz,
@@ -348,7 +357,7 @@ const formatShowDate = (dateString: string, timeZone?: string) => {
   try {
     // Use city timezone if provided, otherwise use browser's local timezone
     const tz = timeZone || selectedCity.value?.TzName || undefined;
-    
+
     // Parse date string - could be ISO string with time or YYYY-MM-DD
     // If it's a date-only string, parse it as local to avoid UTC conversion
     let date: Date;
@@ -358,7 +367,14 @@ const formatShowDate = (dateString: string, timeZone?: string) => {
       const year = dateParts[0];
       const month = dateParts[1];
       const day = dateParts[2];
-      if (year !== undefined && month !== undefined && day !== undefined && !Number.isNaN(year) && !Number.isNaN(month) && !Number.isNaN(day)) {
+      if (
+        year !== undefined &&
+        month !== undefined &&
+        day !== undefined &&
+        !Number.isNaN(year) &&
+        !Number.isNaN(month) &&
+        !Number.isNaN(day)
+      ) {
         date = new Date(year, month - 1, day);
       } else {
         date = new Date(dateString);
@@ -367,7 +383,7 @@ const formatShowDate = (dateString: string, timeZone?: string) => {
       // ISO string with time - parse normally
       date = new Date(dateString);
     }
-    
+
     return new Intl.DateTimeFormat(undefined, {
       dateStyle: 'long',
       timeStyle: 'short',
@@ -431,28 +447,33 @@ const getBandcampArtistUrl = (artist: ArtistInfo): string | undefined => {
 
 // Generate Google Calendar URL for an event
 const getGoogleCalendarUrl = (show: FullShow): string => {
-  const artistNames = show.Artists?.map(a => a.ArtistName).join(', ') || 'Live Music';
+  const artistNames = show.Artists?.map((a) => a.ArtistName).join(', ') || 'Live Music';
   const title = `${artistNames} at ${show.Venue?.Name || 'Venue'}`;
-  
+
   // Parse the show date
   const showDate = new Date(show.Date);
-  
+
   // Format dates for Google Calendar (YYYYMMDDTHHmmssZ format)
   const formatGoogleDate = (date: Date): string => {
-    return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    return date
+      .toISOString()
+      .replace(/[-:]/g, '')
+      .replace(/\.\d{3}/, '');
   };
-  
+
   // Assume show is ~3 hours
   const endDate = new Date(showDate.getTime() + 3 * 60 * 60 * 1000);
-  
+
   const details = [
     show.PriceLow || show.PriceHigh ? `Price: ${formatPrice(show.PriceLow, show.PriceHigh)}` : '',
     show.AgeRange ? `Age: ${ageRangeStrings[show.AgeRange]}` : '',
     show.Urls?.length ? `Tickets: ${show.Urls[0]}` : '',
-  ].filter(Boolean).join('\\n');
-  
+  ]
+    .filter(Boolean)
+    .join('\\n');
+
   const location = show.Venue?.Address || show.Venue?.Name || '';
-  
+
   const params = new URLSearchParams({
     action: 'TEMPLATE',
     text: title,
@@ -460,30 +481,35 @@ const getGoogleCalendarUrl = (show: FullShow): string => {
     details: details,
     location: location,
   });
-  
+
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 };
 
 // Download .ics file for an event
 const downloadIcsFile = (show: FullShow): void => {
-  const artistNames = show.Artists?.map(a => a.ArtistName).join(', ') || 'Live Music';
+  const artistNames = show.Artists?.map((a) => a.ArtistName).join(', ') || 'Live Music';
   const title = `${artistNames} at ${show.Venue?.Name || 'Venue'}`;
-  
+
   const showDate = new Date(show.Date);
   const endDate = new Date(showDate.getTime() + 3 * 60 * 60 * 1000);
-  
+
   const formatIcsDate = (date: Date): string => {
-    return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    return date
+      .toISOString()
+      .replace(/[-:]/g, '')
+      .replace(/\.\d{3}/, '');
   };
-  
+
   const details = [
     show.PriceLow || show.PriceHigh ? `Price: ${formatPrice(show.PriceLow, show.PriceHigh)}` : '',
     show.AgeRange ? `Age: ${ageRangeStrings[show.AgeRange]}` : '',
     show.Urls?.length ? `Tickets: ${show.Urls[0]}` : '',
-  ].filter(Boolean).join('\\n');
-  
+  ]
+    .filter(Boolean)
+    .join('\\n');
+
   const location = show.Venue?.Address || show.Venue?.Name || '';
-  
+
   const icsContent = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -497,7 +523,7 @@ const downloadIcsFile = (show: FullShow): void => {
     'END:VEVENT',
     'END:VCALENDAR',
   ].join('\r\n');
-  
+
   const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -548,7 +574,7 @@ const buildEventsPayload = (): GetEventsRequest | null => {
   // Determine FilterMode based on selected filters
   const hasVenues = selectedVenues.value.length > 0;
   const hasGenres = selectedSpotifyGenres.value.length > 0 || selectedBroadGenres.value.length > 0;
-  
+
   let filterModeValue = 'none';
   if (hasVenues && hasGenres) {
     filterModeValue = filterMode.value; // Use the user-selected mode
@@ -654,7 +680,9 @@ const fetchEvents = async () => {
     } catch (parseError) {
       console.error('[fetchEvents] Failed to parse JSON response:', parseError);
       console.error('[fetchEvents] Response text that failed to parse:', responseText);
-      throw new Error(`Failed to parse response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to parse response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`,
+      );
     }
 
     if (requestId === eventsRequestId) {
@@ -715,10 +743,8 @@ const fetchSupportedCities = async () => {
       void fetchFilters();
     } else if (!selectedCityKey.value) {
       // No stored selection, try to find Portland as default
-      const portland = payload.find(
-        (city) => city.City.toLowerCase() === 'portland'
-      );
-      
+      const portland = payload.find((city) => city.City.toLowerCase() === 'portland');
+
       if (portland) {
         const portlandKey = makeCityKey(portland);
         selectedCityKey.value = portlandKey;
@@ -791,21 +817,19 @@ const fetchFilters = async () => {
   try {
     const data = await apiFetch<EventsFilter>(filtersEndpoint, {
       method: 'POST',
-      body: payload,
+      body: JSON.stringify(payload),
     });
 
     filters.value = data;
     console.log('[fetchFilters] Loaded filters:', data);
-    
+
     // Clear selected filters that are no longer available
-    selectedVenues.value = selectedVenues.value.filter((venue) => 
-      data.Venues?.includes(venue)
+    selectedVenues.value = selectedVenues.value.filter((venue) => data.Venues?.includes(venue));
+    selectedSpotifyGenres.value = selectedSpotifyGenres.value.filter((genre) =>
+      data.SpotifyGenres?.includes(genre),
     );
-    selectedSpotifyGenres.value = selectedSpotifyGenres.value.filter((genre) => 
-      data.SpotifyGenres?.includes(genre)
-    );
-    selectedBroadGenres.value = selectedBroadGenres.value.filter((genre) => 
-      data.BroadGenres?.includes(genre)
+    selectedBroadGenres.value = selectedBroadGenres.value.filter((genre) =>
+      data.BroadGenres?.includes(genre),
     );
   } catch (error) {
     const message =
@@ -907,7 +931,14 @@ const handleRangeChange = (event: Event) => {
       const year = dateParts[0];
       const month = dateParts[1];
       const day = dateParts[2];
-      if (year !== undefined && month !== undefined && day !== undefined && !Number.isNaN(year) && !Number.isNaN(month) && !Number.isNaN(day)) {
+      if (
+        year !== undefined &&
+        month !== undefined &&
+        day !== undefined &&
+        !Number.isNaN(year) &&
+        !Number.isNaN(month) &&
+        !Number.isNaN(day)
+      ) {
         const localDate = new Date(year, month - 1, day);
         return formatLocalIsoDate(localDate);
       }
@@ -923,7 +954,9 @@ const handleRangeChange = (event: Event) => {
   if (parsedStart && parsedEnd) {
     const startDateObj = new Date(parsedStart);
     const endDateObj = new Date(parsedEnd);
-    const diffDays = Math.ceil((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(
+      (endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24),
+    );
     exceedsLimit = diffDays > MAX_DATE_RANGE_DAYS;
   }
 
@@ -961,7 +994,8 @@ const filteredShows = computed(() => {
     // Check venue name
     if (show.Venue?.Name?.toLowerCase().includes(query)) return true;
     // Check artist names
-    if (show.Artists?.some((artist) => artist.ArtistName?.toLowerCase().includes(query))) return true;
+    if (show.Artists?.some((artist) => artist.ArtistName?.toLowerCase().includes(query)))
+      return true;
     return false;
   });
 });
@@ -1142,10 +1176,71 @@ const handleDocumentClick = (event: MouseEvent) => {
   closeCalendar();
 };
 
+// Track if we've applied the initial venue filter from URL
+const hasAppliedInitialVenueFilter = ref(false);
+
+// Handle venue filter from URL query parameter
+const applyVenueFromQuery = () => {
+  if (hasAppliedInitialVenueFilter.value) return;
+
+  const venueParam = route.query.venue;
+  if (venueParam && typeof venueParam === 'string') {
+    hasAppliedInitialVenueFilter.value = true;
+    selectedVenues.value = [venueParam];
+
+    // Set date range to 30 days when filtering by venue from URL
+    const todayDate = new Date();
+    startDate.value = formatIsoDate(todayDate);
+    const thirtyDaysLater = new Date(todayDate);
+    thirtyDaysLater.setDate(todayDate.getDate() + 30);
+    endDate.value = formatIsoDate(thirtyDaysLater);
+
+    void fetchFilters();
+    void fetchEvents();
+  }
+};
+
 onMounted(() => {
   void fetchSupportedCities();
   document.addEventListener('click', handleDocumentClick);
 });
+
+// Watch for filters to load, then apply venue from URL if present
+watch(
+  () => filters.value,
+  (newFilters) => {
+    if (newFilters && !hasAppliedInitialVenueFilter.value) {
+      applyVenueFromQuery();
+    }
+  },
+);
+
+// Also watch for route query changes (for subsequent navigations)
+watch(
+  () => route.query.venue,
+  (newVenue, oldVenue) => {
+    // Only react to changes, not initial load (handled above)
+    if (oldVenue !== undefined && newVenue !== oldVenue) {
+      if (newVenue && typeof newVenue === 'string') {
+        selectedVenues.value = [newVenue];
+
+        // Set date range to 30 days when filtering by venue
+        const todayDate = new Date();
+        startDate.value = formatIsoDate(todayDate);
+        const thirtyDaysLater = new Date(todayDate);
+        thirtyDaysLater.setDate(todayDate.getDate() + 30);
+        endDate.value = formatIsoDate(thirtyDaysLater);
+
+        void fetchFilters();
+        void fetchEvents();
+      } else if (!newVenue) {
+        // Venue param was removed, clear the filter
+        selectedVenues.value = [];
+        void fetchEvents();
+      }
+    }
+  },
+);
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick);
@@ -1171,14 +1266,17 @@ defineExpose({
 
     <!-- Filter Bar: Date picker and filter dropdowns -->
     <div ref="pickerRoot" class="relative mt-6">
-      <div class="card bg-base-200 border border-base-300 shadow-sm">
+      <div class="card border border-base-300 bg-base-200 shadow-sm">
         <div class="card-body p-4">
-          <div class="flex flex-col md:flex-row flex-wrap gap-4 md:items-center">
+          <div class="flex flex-col flex-wrap gap-4 md:flex-row md:items-center">
             <!-- City Dropdown -->
-            <div v-if="supportedCities.length" class="form-control w-full md:w-auto md:min-w-[180px]">
+            <div
+              v-if="supportedCities.length"
+              class="form-control w-full md:w-auto md:min-w-[180px]"
+            >
               <select
                 :value="selectedCityKey || ''"
-                class="select select-bordered select-sm bg-base-100 h-10 pl-4 w-full"
+                class="select-primary h-10"
                 @change="handleCitySelectChange"
               >
                 <option value="">All Cities</option>
@@ -1193,11 +1291,11 @@ defineExpose({
             </div>
 
             <!-- Date Picker -->
-            <div class="relative w-full md:flex-1 md:min-w-[220px]">
+            <div class="relative w-full md:min-w-[220px] md:flex-1">
               <input
                 type="text"
                 readonly
-                class="input-bordered input w-full cursor-pointer bg-base-100 h-10 pl-4 pr-10 hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                class="input-primary h-10 cursor-pointer pl-4 pr-10"
                 :value="formattedDateRange"
                 placeholder="Select date range"
                 @click="openCalendar"
@@ -1209,7 +1307,7 @@ defineExpose({
                 viewBox="0 0 24 24"
                 stroke-width="1.5"
                 stroke="currentColor"
-                class="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 pointer-events-none text-base-content/50"
+                class="text-base-content/50 pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2"
               >
                 <path
                   stroke-linecap="round"
@@ -1220,16 +1318,34 @@ defineExpose({
             </div>
 
             <!-- Filter Buttons with AND/OR toggle between them -->
-            <template v-if="filters && (filters.Venues?.length || filters.SpotifyGenres?.length || filters.BroadGenres?.length)">
+            <template
+              v-if="
+                filters &&
+                (filters.Venues?.length ||
+                  filters.SpotifyGenres?.length ||
+                  filters.BroadGenres?.length)
+              "
+            >
               <!-- Venues Filter Button -->
               <button
                 v-if="filters.Venues && filters.Venues.length > 0"
                 type="button"
-                class="btn btn-sm h-10 bg-base-100 border-base-300 hover:border-primary hover:bg-base-200 w-full md:w-auto md:min-w-[140px]"
+                class="btn btn-sm h-10 w-full border-base-300 bg-base-100 hover:border-primary hover:bg-base-200 md:w-auto md:min-w-[140px]"
                 @click="openVenuesPanel"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="h-4 w-4"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"
+                  />
                 </svg>
                 Venues
                 <span v-if="selectedVenues.length > 0" class="badge badge-primary badge-sm ml-1">
@@ -1238,21 +1354,30 @@ defineExpose({
               </button>
 
               <!-- AND/OR Toggle (between Venues and Genres) -->
-              <div 
-                v-if="selectedVenues.length > 0 && (selectedSpotifyGenres.length > 0 || selectedBroadGenres.length > 0)" 
-                class="flex flex-row gap-1 justify-center w-full md:w-auto md:flex-col md:justify-start"
+              <div
+                v-if="
+                  selectedVenues.length > 0 &&
+                  (selectedSpotifyGenres.length > 0 || selectedBroadGenres.length > 0)
+                "
+                class="flex w-full flex-row justify-center gap-1 md:w-auto md:flex-col md:justify-start"
               >
                 <button
                   type="button"
                   :class="filterMode === 'venue-and-genre' ? 'btn-toggle-active' : 'btn-toggle'"
-                  @click="filterMode = 'venue-and-genre'; void fetchEvents()"
+                  @click="
+                    filterMode = 'venue-and-genre';
+                    void fetchEvents();
+                  "
                 >
                   AND
                 </button>
                 <button
                   type="button"
                   :class="filterMode === 'venue-or-genre' ? 'btn-toggle-active' : 'btn-toggle'"
-                  @click="filterMode = 'venue-or-genre'; void fetchEvents()"
+                  @click="
+                    filterMode = 'venue-or-genre';
+                    void fetchEvents();
+                  "
                 >
                   OR
                 </button>
@@ -1260,28 +1385,45 @@ defineExpose({
 
               <!-- Genres Filter Button -->
               <button
-                v-if="(filters.SpotifyGenres && filters.SpotifyGenres.length > 0) || (filters.BroadGenres && filters.BroadGenres.length > 0)"
+                v-if="
+                  (filters.SpotifyGenres && filters.SpotifyGenres.length > 0) ||
+                  (filters.BroadGenres && filters.BroadGenres.length > 0)
+                "
                 type="button"
-                class="btn btn-sm h-10 bg-base-100 border-base-300 hover:border-primary hover:bg-base-200 w-full md:w-auto md:min-w-[140px]"
+                class="btn btn-sm h-10 w-full border-base-300 bg-base-100 hover:border-primary hover:bg-base-200 md:w-auto md:min-w-[140px]"
                 @click="openGenresPanel"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="h-4 w-4"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"
+                  />
                 </svg>
                 Genres
-                <span v-if="selectedSpotifyGenres.length + selectedBroadGenres.length > 0" class="badge badge-primary badge-sm ml-1">
+                <span
+                  v-if="selectedSpotifyGenres.length + selectedBroadGenres.length > 0"
+                  class="badge badge-primary badge-sm ml-1"
+                >
                   {{ selectedSpotifyGenres.length + selectedBroadGenres.length }}
                 </span>
               </button>
             </template>
 
             <!-- Search Input (client-side filtering) -->
-            <div class="relative w-full md:flex-1 md:min-w-[200px]">
+            <div class="relative w-full md:min-w-[200px] md:flex-1">
               <input
                 v-model="searchQuery"
                 type="text"
                 placeholder="Search venues or artists..."
-                class="input input-bordered w-full bg-base-100 h-10 pl-10 pr-4"
+                class="input-primary h-10 pl-10 pr-4"
               />
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -1289,9 +1431,13 @@ defineExpose({
                 viewBox="0 0 24 24"
                 stroke-width="1.5"
                 stroke="currentColor"
-                class="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 pointer-events-none text-base-content/50"
+                class="text-base-content/50 pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                />
               </svg>
             </div>
           </div>
@@ -1299,7 +1445,7 @@ defineExpose({
       </div>
 
       <div :class="['modal', isCalendarOpen && 'modal-open']" @keydown.stop="handleCalendarKeydown">
-        <div class="modal-box max-w-fit bg-base-200 border border-base-300 shadow-lg">
+        <div class="modal-box max-w-fit border border-base-300 bg-base-200 shadow-lg">
           <div class="overflow-visible">
             <calendar-range
               :value="calendarRangeValue"
@@ -1312,27 +1458,18 @@ defineExpose({
           </div>
 
           <!-- Date range limit warning -->
-          <div v-if="dateRangeLimitWarning" class="mt-3 p-3 bg-error/10 border border-error/30 rounded-lg max-w-[300px]">
-            <p class="text-error text-sm text-center whitespace-normal break-words">
+          <div
+            v-if="dateRangeLimitWarning"
+            class="bg-error/10 border-error/30 mt-3 max-w-[300px] rounded-lg border p-3"
+          >
+            <p class="whitespace-normal break-words text-center text-sm text-error">
               Please select a date range of {{ MAX_DATE_RANGE_DAYS }} days or less.
             </p>
           </div>
 
           <div class="mt-4 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              class="btn-action-outline"
-              @click="clearSelection"
-            >
-              Clear
-            </button>
-            <button
-              type="button"
-              class="btn-action-outline"
-              @click="closeCalendar"
-            >
-              Close
-            </button>
+            <button type="button" class="btn-action-outline" @click="clearSelection">Clear</button>
+            <button type="button" class="btn-action-outline" @click="closeCalendar">Close</button>
           </div>
         </div>
         <div class="modal-backdrop" @click="closeCalendar"></div>
@@ -1341,15 +1478,20 @@ defineExpose({
 
     <!-- Venues Filter Panel -->
     <div :class="['modal', isVenuesPanelOpen && 'modal-open']">
-      <div class="modal-box max-w-2xl w-full bg-base-100 border border-base-300 shadow-lg space-y-0">
-        <div class="flex items-center justify-between pb-4 border-b border-base-300">
+      <div
+        class="modal-box w-full max-w-2xl space-y-0 border border-base-300 bg-base-100 shadow-lg"
+      >
+        <div class="flex items-center justify-between border-b border-base-300 pb-4">
           <h2 class="text-lg font-semibold">Filter Venues</h2>
-          <button
-            type="button"
-            class="btn btn-ghost btn-square"
-            @click="closeVenuesPanel"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-6 w-6">
+          <button type="button" class="btn btn-ghost btn-square" @click="closeVenuesPanel">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2.5"
+              stroke="currentColor"
+              class="h-6 w-6"
+            >
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -1360,7 +1502,7 @@ defineExpose({
             v-model="venueSearchQuery"
             type="text"
             placeholder="Search venues..."
-            class="input input-bordered w-full"
+            class="input-primary"
           />
         </div>
 
@@ -1369,7 +1511,7 @@ defineExpose({
             <label
               v-for="venue in filteredVenues"
               :key="venue"
-              class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 cursor-pointer"
+              class="flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-base-200"
             >
               <input
                 type="checkbox"
@@ -1382,19 +1524,11 @@ defineExpose({
           </div>
         </div>
 
-        <div class="mt-4 pt-4 border-t border-base-300 flex items-center gap-3">
-          <button
-            type="button"
-            class="btn-action-outline flex-1"
-            @click="clearVenuesFilters"
-          >
+        <div class="mt-4 flex items-center gap-3 border-t border-base-300 pt-4">
+          <button type="button" class="btn-action-outline flex-1" @click="clearVenuesFilters">
             Clear
           </button>
-          <button
-            type="button"
-            class="btn-action-solid flex-1"
-            @click="applyVenuesFilters"
-          >
+          <button type="button" class="btn-action-solid flex-1" @click="applyVenuesFilters">
             Apply
           </button>
         </div>
@@ -1404,15 +1538,20 @@ defineExpose({
 
     <!-- Genres Filter Panel -->
     <div :class="['modal', isGenresPanelOpen && 'modal-open']">
-      <div class="modal-box max-w-2xl w-full bg-base-100 border border-base-300 shadow-lg space-y-0">
-        <div class="flex items-center justify-between pb-4 border-b border-base-300">
+      <div
+        class="modal-box w-full max-w-2xl space-y-0 border border-base-300 bg-base-100 shadow-lg"
+      >
+        <div class="flex items-center justify-between border-b border-base-300 pb-4">
           <h2 class="text-lg font-semibold">Filter Genres</h2>
-          <button
-            type="button"
-            class="btn btn-ghost btn-square"
-            @click="closeGenresPanel"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="h-6 w-6">
+          <button type="button" class="btn btn-ghost btn-square" @click="closeGenresPanel">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2.5"
+              stroke="currentColor"
+              class="h-6 w-6"
+            >
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -1423,23 +1562,23 @@ defineExpose({
             v-model="genreSearchQuery"
             type="text"
             placeholder="Search genres..."
-            class="input input-bordered w-full"
+            class="input-primary"
           />
         </div>
 
-        <div class="max-h-[50vh] overflow-y-auto py-2 space-y-6">
+        <div class="max-h-[50vh] space-y-6 overflow-y-auto py-2">
           <div v-if="filters && filters.SpotifyGenres && filters.SpotifyGenres.length > 0">
-            <h3 class="text-sm font-semibold text-base-content/70 mb-3">Spotify Genres</h3>
+            <h3 class="text-base-content/70 mb-3 text-sm font-semibold">Spotify Genres</h3>
             <div class="space-y-2">
               <label
                 v-for="genre in filteredSpotifyGenres"
                 :key="`spotify-${genre}`"
-              class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 cursor-pointer"
+                class="flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-base-200"
               >
                 <input
                   type="checkbox"
                   :checked="isPendingSpotifyGenreSelected(genre)"
-                class="checkbox checkbox-primary border-base-300"
+                  class="checkbox checkbox-primary border-base-300"
                   @change="togglePendingSpotifyGenre(genre)"
                 />
                 <span class="flex-1">{{ genre }}</span>
@@ -1448,17 +1587,17 @@ defineExpose({
           </div>
 
           <div v-if="filters && filters.BroadGenres && filters.BroadGenres.length > 0">
-            <h3 class="text-sm font-semibold text-base-content/70 mb-3">Broad Genres</h3>
+            <h3 class="text-base-content/70 mb-3 text-sm font-semibold">Broad Genres</h3>
             <div class="space-y-2">
               <label
                 v-for="genre in filteredBroadGenres"
                 :key="`broad-${genre}`"
-              class="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 cursor-pointer"
+                class="flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-base-200"
               >
                 <input
                   type="checkbox"
                   :checked="isPendingBroadGenreSelected(genre)"
-                class="checkbox checkbox-primary border-base-300"
+                  class="checkbox checkbox-primary border-base-300"
                   @change="togglePendingBroadGenre(genre)"
                 />
                 <span class="flex-1">{{ genre }}</span>
@@ -1467,19 +1606,11 @@ defineExpose({
           </div>
         </div>
 
-        <div class="mt-4 pt-4 border-t border-base-300 flex items-center gap-3">
-          <button
-            type="button"
-            class="btn-action-outline flex-1"
-            @click="clearGenresFilters"
-          >
+        <div class="mt-4 flex items-center gap-3 border-t border-base-300 pt-4">
+          <button type="button" class="btn-action-outline flex-1" @click="clearGenresFilters">
             Clear
           </button>
-          <button
-            type="button"
-            class="btn-action-solid flex-1"
-            @click="applyGenresFilters"
-          >
+          <button type="button" class="btn-action-solid flex-1" @click="applyGenresFilters">
             Apply
           </button>
         </div>
@@ -1488,7 +1619,14 @@ defineExpose({
     </div>
 
     <!-- Active Filters Chips -->
-    <div v-if="selectedVenues.length > 0 || selectedSpotifyGenres.length > 0 || selectedBroadGenres.length > 0" class="mt-6">
+    <div
+      v-if="
+        selectedVenues.length > 0 ||
+        selectedSpotifyGenres.length > 0 ||
+        selectedBroadGenres.length > 0
+      "
+      class="mt-6"
+    >
       <div class="flex flex-wrap gap-2">
         <!-- Venue chips -->
         <FilterChip
@@ -1517,7 +1655,7 @@ defineExpose({
     </div>
 
     <div v-if="eventsError" class="mt-8">
-      <p class="text-error text-sm">{{ eventsError }}</p>
+      <p class="text-sm text-error">{{ eventsError }}</p>
     </div>
 
     <div v-else-if="isLoadingEvents" class="mt-8">
@@ -1526,24 +1664,25 @@ defineExpose({
 
     <div v-else-if="filteredShows.length > 0" class="mt-8">
       <!-- Alternating row layout for events -->
-      <div class="rounded-lg overflow-hidden border border-base-300">
+      <div class="overflow-hidden rounded-lg border border-base-300">
         <div
           v-for="(show, index) in filteredShows"
           :key="index"
-          :class="[
-            'p-4',
-            index % 2 === 0 ? 'bg-base-200' : 'bg-row-alt'
-          ]"
+          :class="['p-4', index % 2 === 0 ? 'bg-base-200' : 'bg-row-alt']"
         >
           <!-- Header row: Venue, Date, Actions -->
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
+          <div class="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div class="flex-1">
               <h4 class="text-base font-semibold text-base-content">{{ show.Venue.Name }}</h4>
-              <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-base-content/70 mt-1">
+              <div class="text-base-content/70 mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                 <span>{{ formatShowDate(show.Date) }}</span>
                 <span v-if="hasPrice(show)">{{ formatPrice(show.PriceLow, show.PriceHigh) }}</span>
-                <span v-if="show.AgeRange !== undefined && show.AgeRange !== 0">{{ ageRangeStrings[show.AgeRange] }}</span>
-                <span v-if="show.Venue.Address" class="truncate max-w-xs">{{ show.Venue.Address }}</span>
+                <span v-if="show.AgeRange !== undefined && show.AgeRange !== 0">{{
+                  ageRangeStrings[show.AgeRange]
+                }}</span>
+                <span v-if="show.Venue.Address" class="max-w-xs truncate">{{
+                  show.Venue.Address
+                }}</span>
               </div>
             </div>
             <!-- Add to Calendar dropdown -->
@@ -1551,23 +1690,48 @@ defineExpose({
               <button
                 type="button"
                 tabindex="0"
-                class="btn btn-sm btn-ghost gap-1 text-primary hover:bg-primary/10"
+                class="hover:bg-primary/10 btn btn-ghost btn-sm gap-1 text-primary"
                 title="Add to Calendar"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="h-4 w-4"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z"
+                  />
                 </svg>
                 <span class="hidden sm:inline">Add to Cal</span>
               </button>
-              <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-lg shadow-lg border border-base-300 w-48 p-2 z-50">
+              <ul
+                tabindex="0"
+                class="dropdown-content menu z-50 w-48 rounded-lg border border-base-300 bg-base-100 p-2 shadow-lg"
+              >
                 <li>
                   <button
                     type="button"
                     class="flex items-center gap-2"
                     @click="downloadIcsFile(show)"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                      class="h-4 w-4"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+                      />
                     </svg>
                     Apple / Outlook
                   </button>
@@ -1579,8 +1743,19 @@ defineExpose({
                     rel="noopener noreferrer"
                     class="flex items-center gap-2"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                      class="h-4 w-4"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"
+                      />
                     </svg>
                     Google Calendar
                   </a>
@@ -1597,7 +1772,7 @@ defineExpose({
               class="flex flex-col"
             >
               <!-- Artist name and genres -->
-              <div class="flex items-center gap-2 mb-1">
+              <div class="mb-1 flex items-center gap-2">
                 <span class="font-medium text-base-content">{{ artist.ArtistName }}</span>
                 <div v-if="artist.Genres && artist.Genres.length > 0" class="flex flex-wrap gap-1">
                   <span
@@ -1623,7 +1798,7 @@ defineExpose({
                   :src="`https://bandcamp.com/EmbeddedPlayer/album=${getFirstAlbumId(artist)}/size=small/bgcol=ffffff/linkcol=0687f5/tracklist=false/transparent=true/`"
                   :width="280"
                   :height="80"
-                  class="border-0 rounded-md"
+                  class="rounded-md border-0"
                 />
               </div>
               <a
@@ -1631,7 +1806,7 @@ defineExpose({
                 :href="getBandcampArtistUrl(artist)"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="text-primary hover:underline text-sm font-medium"
+                class="text-sm font-medium text-primary hover:underline"
               >
                 Listen on Bandcamp →
               </a>
@@ -1645,7 +1820,9 @@ defineExpose({
       <p v-if="shows.length > 0 && searchQuery.trim()" class="text-base-content/70 text-sm">
         No events match "{{ searchQuery }}"
       </p>
-      <p v-else class="text-base-content/70 text-sm">No events found for the selected date range.</p>
+      <p v-else class="text-base-content/70 text-sm">
+        No events found for the selected date range.
+      </p>
     </div>
   </section>
 </template>
