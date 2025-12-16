@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 
 import { resolveApiPath } from '@/config/api';
+import { usePostHog } from '@/composables/usePostHog';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -32,6 +33,8 @@ const getCookie = (name: string): string | undefined => {
  * Composable for managing Spotify authentication
  */
 export const useAuth = () => {
+  const { identify: posthogIdentify, reset: posthogReset } = usePostHog();
+
   // Initialize auth state from cookies (only once)
   const initAuth = () => {
     if (isInitialized.value) return;
@@ -39,6 +42,8 @@ export const useAuth = () => {
     const userId = getCookie(COOKIE_NAMES.spotifyUserId);
     if (userId && userId !== 'error') {
       spotifyUserId.value = userId;
+      // Identify user in PostHog
+      posthogIdentify(userId);
     }
     isInitialized.value = true;
   };
@@ -106,6 +111,8 @@ export const useAuth = () => {
     } finally {
       // Clear local state regardless of API response
       spotifyUserId.value = undefined;
+      // Reset PostHog identity
+      posthogReset();
     }
   };
 
@@ -117,6 +124,8 @@ export const useAuth = () => {
     const userId = getCookie(COOKIE_NAMES.spotifyUserId);
     if (userId && userId !== 'error') {
       spotifyUserId.value = userId;
+      // Identify user in PostHog
+      posthogIdentify(userId);
     } else if (userId === 'error') {
       spotifyUserId.value = 'error';
     } else {

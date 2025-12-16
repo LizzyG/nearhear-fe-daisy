@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
 import PageHeader from '@/components/layout/PageHeader.vue';
 
 import { resolveApiPath } from '@/config/api';
+import { useAuth } from '@/composables/useAuth';
+import { apiFetch } from '@/utils/api';
 
 // Types
 interface City {
@@ -72,6 +75,14 @@ const isDetailsModalOpen = ref(false);
 // Search/filter state
 const searchQuery = ref('');
 
+// Auth
+const route = useRoute();
+const { isLoggedIn, loginWithSpotify } = useAuth();
+
+// Follow state
+const followedPlaylists = ref<Set<string>>(new Set());
+const followingInProgress = ref<Set<string>>(new Set());
+
 // Endpoints
 const featuredPlaylistsEndpoint = resolveApiPath('/media/getFeaturedPlaylists');
 const playlistDetailsEndpoint = resolveApiPath('/media/getPlaylistDetails');
@@ -136,6 +147,55 @@ const getPlaylistTypeColor = (playlist: Playlist): string => {
   if (playlist.PlaylistName.toLowerCase().includes('this week')) return 'badge-accent';
 
   return 'badge-neutral';
+};
+
+// Follow/unfollow playlist functions
+const isFollowed = (spotifyPlaylistId: string): boolean => {
+  return followedPlaylists.value.has(spotifyPlaylistId);
+};
+
+const isFollowLoading = (spotifyPlaylistId: string): boolean => {
+  return followingInProgress.value.has(spotifyPlaylistId);
+};
+
+const toggleFollow = async (playlist: Playlist, event: Event) => {
+  event.stopPropagation(); // Prevent opening the modal
+
+  const spotifyPlaylistId = playlist.SpotifyPlaylistId;
+  if (!spotifyPlaylistId) return;
+
+  // Check if user is logged in
+  if (!isLoggedIn.value) {
+    loginWithSpotify(route.fullPath);
+    return;
+  }
+
+  // Prevent double-clicks
+  if (followingInProgress.value.has(spotifyPlaylistId)) return;
+
+  followingInProgress.value.add(spotifyPlaylistId);
+
+  try {
+    const isCurrentlyFollowed = followedPlaylists.value.has(spotifyPlaylistId);
+    const endpoint = isCurrentlyFollowed
+      ? '/media/unsubscribePlaylist'
+      : '/media/subscribePlaylist';
+
+    const params = new URLSearchParams({ spotifyPlaylistId });
+    await apiFetch(`${endpoint}?${params.toString()}`);
+
+    // Toggle the follow state
+    if (isCurrentlyFollowed) {
+      followedPlaylists.value.delete(spotifyPlaylistId);
+    } else {
+      followedPlaylists.value.add(spotifyPlaylistId);
+    }
+  } catch (err) {
+    console.error('Failed to toggle follow:', err);
+    // Optionally show error to user
+  } finally {
+    followingInProgress.value.delete(spotifyPlaylistId);
+  }
 };
 
 // Computed: group playlists by type
@@ -450,19 +510,59 @@ onMounted(() => {
                   </p>
                 </div>
 
-                <!-- Spotify Button -->
-                <button
-                  type="button"
-                  class="text-spotify hover:bg-spotify/10 btn btn-ghost btn-sm btn-circle"
-                  title="Open in Spotify"
-                  @click.stop="openSpotifyPlaylist(playlist)"
-                >
-                  <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor">
-                    <path
-                      d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"
-                    />
-                  </svg>
-                </button>
+                <div class="flex items-center gap-1">
+                  <!-- Follow Button -->
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm btn-circle"
+                    :class="
+                      isFollowed(playlist.SpotifyPlaylistId)
+                        ? 'text-error'
+                        : 'text-base-content/40 hover:text-error'
+                    "
+                    :title="
+                      isFollowed(playlist.SpotifyPlaylistId)
+                        ? 'Unfollow playlist'
+                        : 'Follow playlist'
+                    "
+                    :disabled="isFollowLoading(playlist.SpotifyPlaylistId)"
+                    @click="toggleFollow(playlist, $event)"
+                  >
+                    <span
+                      v-if="isFollowLoading(playlist.SpotifyPlaylistId)"
+                      class="loading loading-spinner loading-xs"
+                    ></span>
+                    <svg
+                      v-else
+                      xmlns="http://www.w3.org/2000/svg"
+                      :fill="isFollowed(playlist.SpotifyPlaylistId) ? 'currentColor' : 'none'"
+                      viewBox="0 0 24 24"
+                      stroke-width="2"
+                      stroke="currentColor"
+                      class="h-5 w-5"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                      />
+                    </svg>
+                  </button>
+
+                  <!-- Spotify Button -->
+                  <button
+                    type="button"
+                    class="text-spotify hover:bg-spotify/10 btn btn-ghost btn-sm btn-circle"
+                    title="Open in Spotify"
+                    @click.stop="openSpotifyPlaylist(playlist)"
+                  >
+                    <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor">
+                      <path
+                        d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               <!-- Playlist Type Badge -->
@@ -526,21 +626,58 @@ onMounted(() => {
               · {{ selectedPlaylist.City.City }}, {{ selectedPlaylist.City.StateAbbrev }}
             </p>
 
-            <!-- Open in Spotify button -->
-            <a
-              v-if="selectedPlaylist.PlaylistLink"
-              :href="selectedPlaylist.PlaylistLink"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="bg-spotify hover:bg-spotify-hover mt-3 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-white transition-colors"
-            >
-              <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor">
-                <path
-                  d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"
-                />
-              </svg>
-              Open in Spotify
-            </a>
+            <!-- Action buttons -->
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+              <!-- Open in Spotify button -->
+              <a
+                v-if="selectedPlaylist.PlaylistLink"
+                :href="selectedPlaylist.PlaylistLink"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="bg-spotify hover:bg-spotify-hover inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-white transition-colors"
+              >
+                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor">
+                  <path
+                    d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"
+                  />
+                </svg>
+                Open in Spotify
+              </a>
+
+              <!-- Follow button -->
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
+                :class="
+                  isFollowed(selectedPlaylist.SpotifyPlaylistId)
+                    ? 'bg-error/10 hover:bg-error/20 text-error'
+                    : 'bg-base-200 text-base-content hover:bg-base-300'
+                "
+                :disabled="isFollowLoading(selectedPlaylist.SpotifyPlaylistId)"
+                @click="toggleFollow(selectedPlaylist, $event)"
+              >
+                <span
+                  v-if="isFollowLoading(selectedPlaylist.SpotifyPlaylistId)"
+                  class="loading loading-spinner loading-xs"
+                ></span>
+                <svg
+                  v-else
+                  xmlns="http://www.w3.org/2000/svg"
+                  :fill="isFollowed(selectedPlaylist.SpotifyPlaylistId) ? 'currentColor' : 'none'"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                  stroke="currentColor"
+                  class="h-4 w-4"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                  />
+                </svg>
+                {{ isFollowed(selectedPlaylist.SpotifyPlaylistId) ? 'Following' : 'Follow' }}
+              </button>
+            </div>
           </div>
           <button
             type="button"

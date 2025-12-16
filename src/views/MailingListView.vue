@@ -27,10 +27,11 @@ const subscribe = async () => {
   submitSuccess.value = false;
 
   try {
-    await apiFetch('/media/mailingList/subscribe', {
-      method: 'POST',
-      body: JSON.stringify({ email: email.value }),
+    const params = new URLSearchParams({
+      email: email.value,
+      source: 'page',
     });
+    await apiFetch(`/media/mailingList/subscribe?${params.toString()}`);
 
     submitSuccess.value = true;
     email.value = '';
@@ -57,7 +58,7 @@ const resetForm = () => {
       <!-- Success State -->
       <div v-if="submitSuccess" class="space-y-6">
         <div class="flex justify-center">
-          <div class="flex h-16 w-16 items-center justify-center rounded-full bg-success/20">
+          <div class="bg-success/20 flex h-16 w-16 items-center justify-center rounded-full">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -123,11 +124,8 @@ const resetForm = () => {
           </button>
         </form>
 
-        <p class="text-base-content/50 text-sm">
-          We respect your privacy. Unsubscribe anytime.
-        </p>
+        <p class="text-base-content/50 text-sm">We respect your privacy. Unsubscribe anytime.</p>
       </div>
     </div>
   </section>
 </template>
-

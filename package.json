@@ -18,6 +18,7 @@
   "dependencies": {
     "cally": "^0.8.0",
     "leaflet": "^1.9.4",
+    "posthog-js": "^1.302.2",
     "vue": "^3.5.22",
     "vue-router": "^4.6.3"
   },

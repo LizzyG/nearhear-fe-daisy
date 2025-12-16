@@ -8,16 +8,25 @@ import PageHeader from '@/components/layout/PageHeader.vue';
 
     <div class="mx-auto mt-8 max-w-2xl">
       <!-- Main About Section -->
-      <div class="prose prose-lg max-w-none">
+      <div class="space-y-6">
         <p class="text-base-content/90 text-lg leading-relaxed">
           NearHear is me, Liz. I live in Portland and like going to shows and writing software. I
-          made NearHear because I wanted it to exist. I don't make money doing this, so if you like
-          it and have spare cash you can Venmo me to help with costs. Thoughts, questions, etc can
-          be sent to
+          made NearHear because I wanted it to exist, and I made it the way I wanted it - no ads, no
+          tracking, no login required, just a fun, useful tool.
+        </p>
+
+        <p class="text-base-content/90 text-lg leading-relaxed">
+          NearHear exists to help you find shows and have fun in real life, not to get you to spend
+          hours on the site. If you find a band you like, please go see them!
+        </p>
+
+        <p class="text-base-content/90 text-lg leading-relaxed">
+          I don't make money doing this, so if you like it and have spare cash you can Venmo me to
+          help with costs. Thoughts, questions, etc can be sent to
           <a href="mailto:feedback@nearhear.app" class="link-primary">feedback@nearhear.app</a>.
         </p>
 
-        <p class="text-base-content/90 mt-6 text-lg leading-relaxed">
+        <p class="text-base-content/90 text-lg leading-relaxed">
           Shout out to my husband, Dan, who has contributed a TON to this, from making the original
           front end, to brainstorming and being my number one user. He's the best.
         </p>
@@ -40,8 +49,10 @@ import PageHeader from '@/components/layout/PageHeader.vue';
             </svg>
           </div>
           <div class="flex-1">
-            <h3 class="font-semibold text-base-content group-hover:text-primary">Support NearHear</h3>
-            <p class="text-sm text-base-content/60">Buy me a coffee via Venmo</p>
+            <h3 class="font-semibold text-base-content group-hover:text-primary">
+              Support NearHear
+            </h3>
+            <p class="text-base-content/60 text-sm">Buy me a coffee via Venmo</p>
           </div>
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -49,7 +60,7 @@ import PageHeader from '@/components/layout/PageHeader.vue';
             viewBox="0 0 24 24"
             stroke-width="2"
             stroke="currentColor"
-            class="h-5 w-5 text-base-content/40 transition-transform group-hover:translate-x-1 group-hover:text-primary"
+            class="text-base-content/40 h-5 w-5 transition-transform group-hover:translate-x-1 group-hover:text-primary"
           >
             <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
           </svg>
@@ -60,7 +71,7 @@ import PageHeader from '@/components/layout/PageHeader.vue';
           href="mailto:feedback@nearhear.app"
           class="group flex items-center gap-4 rounded-xl border border-base-300 bg-base-100 p-5 transition-all hover:border-primary hover:shadow-md"
         >
-          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+          <div class="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -78,7 +89,7 @@ import PageHeader from '@/components/layout/PageHeader.vue';
           </div>
           <div class="flex-1">
             <h3 class="font-semibold text-base-content group-hover:text-primary">Get in Touch</h3>
-            <p class="text-sm text-base-content/60">feedback@nearhear.app</p>
+            <p class="text-base-content/60 text-sm">feedback@nearhear.app</p>
           </div>
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -86,7 +97,7 @@ import PageHeader from '@/components/layout/PageHeader.vue';
             viewBox="0 0 24 24"
             stroke-width="2"
             stroke="currentColor"
-            class="h-5 w-5 text-base-content/40 transition-transform group-hover:translate-x-1 group-hover:text-primary"
+            class="text-base-content/40 h-5 w-5 transition-transform group-hover:translate-x-1 group-hover:text-primary"
           >
             <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
           </svg>
@@ -100,4 +111,3 @@ import PageHeader from '@/components/layout/PageHeader.vue';
     </div>
   </section>
 </template>
-

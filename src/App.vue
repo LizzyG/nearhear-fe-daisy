@@ -4,6 +4,8 @@ import { RouterLink, RouterView } from 'vue-router';
 import AppFooter from '@/components/layout/AppFooter.vue';
 import AppHeader from '@/components/layout/AppHeader.vue';
 import AppMobileDock from '@/components/layout/AppMobileDock.vue';
+import MailingListModal from '@/components/MailingListModal.vue';
+import NowPlayingWidget from '@/components/NowPlayingWidget.vue';
 </script>
 
 <template>
@@ -27,5 +29,7 @@ import AppMobileDock from '@/components/layout/AppMobileDock.vue';
     </main>
     <AppFooter />
     <AppMobileDock />
+    <MailingListModal />
+    <NowPlayingWidget />
   </div>
 </template>

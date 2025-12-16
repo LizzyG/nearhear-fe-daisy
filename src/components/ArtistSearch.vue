@@ -27,6 +27,16 @@ const getInstagramHandle = (artist: ArtistInfo): string | null => {
   return null;
 };
 
+// Get Spotify artist ID from either the field or by extracting from URL
+const getSpotifyArtistId = (artist: ArtistInfo): string | null => {
+  if (artist.SpotifyArtistId) return artist.SpotifyArtistId;
+  if (artist.SpotifyURL) {
+    const match = artist.SpotifyURL.match(/artist\/([a-zA-Z0-9]+)/i);
+    return match ? match[1] : null;
+  }
+  return null;
+};
+
 const props = defineProps<{
   modelValue?: ArtistInfo | null;
 }>();
@@ -85,6 +95,23 @@ const missingInfo = computed(() => {
 
 const hasMissingInfo = computed(() => {
   return missingInfo.value.spotify || missingInfo.value.bandcamp || missingInfo.value.instagram;
+});
+
+// Check if artist is missing streaming URLs (won't appear on app without these)
+const isMissingStreamingUrls = computed(() => {
+  if (!selectedArtist.value) return false;
+  // Only show warning for manually added artists (not from database)
+  if (isExistingArtist.value) return false;
+  // Check if missing both Spotify AND Bandcamp
+  const hasSpotify =
+    selectedArtist.value.SpotifyURL ||
+    selectedArtist.value.SpotifyArtistId ||
+    manualSpotifyURL.value;
+  const hasBandcamp =
+    selectedArtist.value.BandcampURL ||
+    selectedArtist.value.BandcampArtistSlug ||
+    manualBandcampURL.value;
+  return !hasSpotify && !hasBandcamp;
 });
 
 // Normalize URL by adding https:// if missing
@@ -652,10 +679,35 @@ watch(
         </button>
       </div>
 
+      <!-- Warning for manually added artists without streaming URLs -->
+      <div
+        v-if="isMissingStreamingUrls"
+        class="border-warning/50 bg-warning/10 mb-4 flex items-start gap-2 rounded-lg border p-3"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="mt-0.5 h-5 w-5 shrink-0 text-warning"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+          />
+        </svg>
+        <p class="text-sm text-warning-content">
+          <strong>Note:</strong> Artists won't appear on NearHear until we have a Spotify or
+          Bandcamp link. Add one below if you have it!
+        </p>
+      </div>
+
       <!-- Platform Links & Embeds -->
       <div class="mt-4 space-y-4">
         <!-- Spotify -->
-        <div v-if="selectedArtist.SpotifyArtistId || selectedArtist.SpotifyURL">
+        <div v-if="getSpotifyArtistId(selectedArtist)">
           <div class="mb-2 flex items-center gap-2">
             <svg viewBox="0 0 24 24" class="text-spotify h-4 w-4" fill="currentColor">
               <path
@@ -674,8 +726,7 @@ watch(
             </a>
           </div>
           <LazyEmbed
-            v-if="selectedArtist.SpotifyArtistId"
-            :src="`https://open.spotify.com/embed/artist/${selectedArtist.SpotifyArtistId}?utm_source=generator&theme=0&compact=true`"
+            :src="`https://open.spotify.com/embed/artist/${getSpotifyArtistId(selectedArtist)}?utm_source=generator&theme=0&compact=true`"
             :width="280"
             :height="80"
             class="rounded-md"

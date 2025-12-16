@@ -3,16 +3,58 @@ import { ref, computed, onMounted } from 'vue';
 
 import ArtistSearch from '@/components/ArtistSearch.vue';
 import PageHeader from '@/components/layout/PageHeader.vue';
-import { useAuth } from '@/composables/useAuth';
 import type { ArtistInfo } from '@/types/artist';
-import type { SupportedCity, AgeRange, AddEventRequest, EventArtistInput } from '@/types/event';
+import type { SupportedCity, AgeRange, FullShow, ShowArtistInfo, Venue } from '@/types/event';
 import { apiFetch } from '@/utils/api';
 
-const { userId } = useAuth();
+// Minimum date (today) for the date picker
+const todayDate = computed(() => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+});
+
+// Calendar modal state
+const isCalendarOpen = ref(false);
+
+const openCalendar = () => {
+  isCalendarOpen.value = true;
+};
+
+const closeCalendar = () => {
+  isCalendarOpen.value = false;
+};
 
 // Form state
 const eventDate = ref('');
 const eventTime = ref('');
+
+// Format date for display
+const formattedDate = computed(() => {
+  if (!eventDate.value) return '';
+  try {
+    const [year, month, day] = eventDate.value.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
+  } catch {
+    return eventDate.value;
+  }
+});
+
+// Handle calendar date selection
+type CalendarDateElement = HTMLElement & { value?: string };
+
+const handleDateChange = (event: Event) => {
+  const target = event.currentTarget as CalendarDateElement | null;
+  if (!target?.value) return;
+
+  // Validate it's not in the past
+  if (target.value < todayDate.value) {
+    return;
+  }
+
+  eventDate.value = target.value;
+  closeCalendar();
+};
 const selectedCity = ref<SupportedCity | null>(null);
 const venueName = ref('');
 const eventUrl = ref('');
@@ -141,6 +183,16 @@ const extractInstagramHandle = (artist: ArtistInfo): string => {
   return '';
 };
 
+// Extract Bandcamp slug from URL if needed
+const extractBandcampSlug = (artist: ArtistInfo): string => {
+  if (artist.BandcampArtistSlug) return artist.BandcampArtistSlug;
+  if (artist.BandcampURL) {
+    const match = artist.BandcampURL.match(/https?:\/\/([a-zA-Z0-9-]+)\.bandcamp\.com/i);
+    return match ? match[1] : '';
+  }
+  return '';
+};
+
 // Form submission
 const submitEvent = async () => {
   if (!canSubmit.value || !selectedCity.value) return;
@@ -154,32 +206,40 @@ const submitEvent = async () => {
     const dateTimeString = `${eventDate.value}T${eventTime.value}:00`;
     const dateTime = new Date(dateTimeString);
 
-    // Build artist input array
-    const artistInputs: EventArtistInput[] = artists.value.map((artist) => ({
-      ArtistName: artist.ArtistName,
-      SpotifyArtistId: artist.SpotifyArtistId || undefined,
-      BandcampUrl: artist.BandcampURL || undefined,
-      InstagramHandle: extractInstagramHandle(artist) || undefined,
-    }));
-
-    const requestBody: AddEventRequest = {
-      UserId: userId.value || '',
-      Date: dateTime.toISOString(),
-      City: selectedCity.value.City,
+    // Build venue object
+    const venue: Venue = {
+      Name: venueName.value.trim(),
+      CityStr: selectedCity.value.City,
       State: selectedCity.value.StateAbbrev,
-      VenueName: venueName.value.trim(),
-      EventUrl: eventUrl.value.trim(),
-      Artists: artistInputs,
-      ImageUrl: imageUrl.value.trim() || undefined,
-      AgeRange: ageRange.value,
-      IsFree: isFree.value,
-      PriceLow: isFree.value ? undefined : (priceLow.value ?? undefined),
-      PriceHigh: isFree.value ? undefined : (priceHigh.value ?? undefined),
+      City: selectedCity.value,
     };
 
-    await apiFetch('/media/addEventFromUser', {
+    // Build artist array in ShowArtistInfo format
+    const showArtists: ShowArtistInfo[] = artists.value.map((artist) => ({
+      ArtistName: artist.ArtistName,
+      SpotifyArtistId: artist.SpotifyArtistId || undefined,
+      InstagramHandle: extractInstagramHandle(artist) || undefined,
+      BandcampArtistSlug: extractBandcampSlug(artist) || undefined,
+      BandcampURL: artist.BandcampURL || undefined,
+      Genres: artist.Genres || undefined,
+    }));
+
+    // Build FullShow object
+    const fullShow: FullShow = {
+      Date: dateTime.toISOString(),
+      PriceLow: isFree.value ? 0 : (priceLow.value ?? 0),
+      PriceHigh: isFree.value ? 0 : (priceHigh.value ?? 0),
+      AgeRange: ageRange.value,
+      Venue: venue,
+      Urls: [eventUrl.value.trim()],
+      ImgUrl: imageUrl.value.trim() || '',
+      Artists: showArtists,
+      Status: 'pending',
+    };
+
+    await apiFetch('/media/upsertUserEvent', {
       method: 'POST',
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify(fullShow),
     });
 
     submitSuccess.value = true;
@@ -255,11 +315,31 @@ const resetForm = () => {
             <label class="label">
               <span class="label-text font-medium"> Date <span class="text-error">*</span> </span>
             </label>
-            <input
-              v-model="eventDate"
-              type="date"
-              :class="['input-primary', validationErrors.date && eventDate === '' && 'input-error']"
-            />
+            <div class="relative">
+              <input
+                type="text"
+                readonly
+                class="input-primary cursor-pointer pr-10"
+                :class="[validationErrors.date && eventDate === '' && 'input-error']"
+                :value="formattedDate"
+                placeholder="Select date"
+                @click="openCalendar"
+              />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="text-base-content/50 pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+                />
+              </svg>
+            </div>
           </div>
 
           <!-- Time -->
@@ -551,6 +631,38 @@ const resetForm = () => {
           </button>
         </div>
       </form>
+    </div>
+
+    <!-- Calendar Modal -->
+    <div :class="['modal', isCalendarOpen && 'modal-open']">
+      <div class="modal-box max-w-fit border border-base-300 bg-base-200 shadow-lg">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="font-semibold">Select Date</h3>
+          <button type="button" class="btn btn-ghost btn-sm btn-circle" @click="closeCalendar">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              stroke="currentColor"
+              class="h-5 w-5"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="overflow-visible">
+          <calendar-date
+            :value="eventDate"
+            :min="todayDate"
+            :first-day-of-week="0"
+            @change="handleDateChange"
+          >
+            <calendar-month></calendar-month>
+          </calendar-date>
+        </div>
+      </div>
+      <div class="modal-backdrop" @click="closeCalendar"></div>
     </div>
   </section>
 </template>
