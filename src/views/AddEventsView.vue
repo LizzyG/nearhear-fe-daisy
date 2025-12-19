@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 
 import ArtistSearch from '@/components/ArtistSearch.vue';
+import VenueSearch from '@/components/VenueSearch.vue';
 import PageHeader from '@/components/layout/PageHeader.vue';
 import type { ArtistInfo } from '@/types/artist';
 import type { SupportedCity, AgeRange, FullShow, ShowArtistInfo, Venue } from '@/types/event';
@@ -56,17 +57,21 @@ const handleDateChange = (event: Event) => {
   closeCalendar();
 };
 const selectedCity = ref<SupportedCity | null>(null);
-const venueName = ref('');
 const eventUrl = ref('');
 const imageUrl = ref('');
-const ageRange = ref<AgeRange>(0);
+const ageRange = ref<AgeRange>(3);
 const isFree = ref(false);
 const priceLow = ref<number | null>(null);
 const priceHigh = ref<number | null>(null);
 
+// Venue state
+const venueSearchRef = ref<InstanceType<typeof VenueSearch>>();
+const selectedVenue = ref<Venue | null>(null);
+
 // Artists state - support multiple
 const artists = ref<ArtistInfo[]>([]);
 const currentArtistRef = ref<InstanceType<typeof ArtistSearch>>();
+const currentArtist = ref<ArtistInfo | null>(null);
 const showArtistSearch = ref(false);
 
 // City dropdown state
@@ -81,6 +86,7 @@ const submitSuccess = ref(false);
 
 // Age range options
 const ageRangeOptions = [
+  { value: 3, label: 'Unknown' },
   { value: 0, label: 'All Ages' },
   { value: 1, label: '18+' },
   { value: 2, label: '21+' },
@@ -101,7 +107,7 @@ const validationErrors = computed(() => ({
   date: !eventDate.value ? 'Date is required' : null,
   time: !eventTime.value ? 'Time is required' : null,
   city: !selectedCity.value ? 'City is required' : null,
-  venue: !venueName.value.trim() ? 'Venue is required' : null,
+  venue: !selectedVenue.value ? 'Venue is required' : null,
   eventUrl: !eventUrl.value.trim()
     ? 'Event link is required'
     : !isValidUrl(eventUrl.value)
@@ -156,7 +162,17 @@ const handleCityChange = (event: Event) => {
 
 // Artist management
 const handleArtistSelected = (artist: ArtistInfo) => {
-  // Check if artist already added
+  // For manual artists (no ArtistId and no SpotifyArtistId), don't auto-add yet
+  // Let the user fill in details first
+  const isManualArtist = !artist.ArtistId && !artist.SpotifyArtistId;
+
+  if (isManualArtist) {
+    // Just update currentArtist, keep the form visible
+    // User will click a button to add the artist when ready
+    return;
+  }
+
+  // For existing artists from database/Spotify, add immediately
   const exists = artists.value.some(
     (a) =>
       a.ArtistName.toLowerCase() === artist.ArtistName.toLowerCase() ||
@@ -166,11 +182,58 @@ const handleArtistSelected = (artist: ArtistInfo) => {
   if (!exists) {
     artists.value.push(artist);
   }
+
+  // Clear the current artist and hide search
+  currentArtist.value = null;
   showArtistSearch.value = false;
 };
 
 const removeArtist = (index: number) => {
   artists.value.splice(index, 1);
+};
+
+// Check if we should show the "Add to Event" button
+const showAddToEventButton = computed(() => {
+  if (!currentArtist.value) return false;
+  if (!currentArtistRef.value) return false;
+
+  // Only show for manual artists (no ID from database/Spotify)
+  const isManualArtist = !currentArtist.value.ArtistId && !currentArtist.value.SpotifyArtistId;
+  if (!isManualArtist) return false;
+
+  // Check if validation passes
+  const hasErrors = currentArtistRef.value.hasValidationErrors;
+  return !hasErrors;
+});
+
+// Add current artist to the event (for manual artists)
+const addCurrentArtist = () => {
+  if (!currentArtist.value) return;
+
+  // Get the final artist info from the search component
+  const artistData = currentArtistRef.value?.getFinalArtistInfo();
+  if (!artistData) return;
+
+  // Check if artist already added
+  const exists = artists.value.some(
+    (a) =>
+      a.ArtistName.toLowerCase() === artistData.ArtistName.toLowerCase() ||
+      (a.SpotifyArtistId && a.SpotifyArtistId === artistData.SpotifyArtistId),
+  );
+
+  if (!exists) {
+    artists.value.push(artistData);
+  }
+
+  // Clear the current artist and hide search
+  currentArtist.value = null;
+  showArtistSearch.value = false;
+};
+
+// Close artist search and clear state
+const closeArtistSearch = () => {
+  currentArtist.value = null;
+  showArtistSearch.value = false;
 };
 
 // Extract Instagram handle from URL if needed
@@ -206,13 +269,11 @@ const submitEvent = async () => {
     const dateTimeString = `${eventDate.value}T${eventTime.value}:00`;
     const dateTime = new Date(dateTimeString);
 
-    // Build venue object
-    const venue: Venue = {
-      Name: venueName.value.trim(),
-      CityStr: selectedCity.value.City,
-      State: selectedCity.value.StateAbbrev,
-      City: selectedCity.value,
-    };
+    // Get venue data from VenueSearch component
+    const venueData = venueSearchRef.value?.getFinalVenueInfo();
+    if (!venueData) {
+      throw new Error('Venue information is required');
+    }
 
     // Build artist array in ShowArtistInfo format
     const showArtists: ShowArtistInfo[] = artists.value.map((artist) => ({
@@ -230,7 +291,7 @@ const submitEvent = async () => {
       PriceLow: isFree.value ? 0 : (priceLow.value ?? 0),
       PriceHigh: isFree.value ? 0 : (priceHigh.value ?? 0),
       AgeRange: ageRange.value,
-      Venue: venue,
+      Venue: venueData,
       Urls: [eventUrl.value.trim()],
       ImgUrl: imageUrl.value.trim() || '',
       Artists: showArtists,
@@ -255,10 +316,10 @@ const resetForm = () => {
   eventDate.value = '';
   eventTime.value = '';
   selectedCity.value = null;
-  venueName.value = '';
+  selectedVenue.value = null;
   eventUrl.value = '';
   imageUrl.value = '';
-  ageRange.value = 0;
+  ageRange.value = 3;
   isFree.value = false;
   priceLow.value = null;
   priceHigh.value = null;
@@ -385,12 +446,14 @@ const resetForm = () => {
           <label class="label">
             <span class="label-text font-medium"> Venue <span class="text-error">*</span> </span>
           </label>
-          <input
-            v-model="venueName"
-            type="text"
-            placeholder="Enter venue name..."
-            :class="['input-primary', validationErrors.venue && !venueName.trim() && 'input-error']"
+          <VenueSearch
+            ref="venueSearchRef"
+            v-model="selectedVenue"
+            :city="selectedCity"
           />
+          <p v-if="validationErrors.venue && !selectedVenue" class="mt-1 text-xs text-error">
+            {{ validationErrors.venue }}
+          </p>
         </div>
 
         <!-- Event Link -->
@@ -500,7 +563,7 @@ const resetForm = () => {
               <button
                 type="button"
                 class="btn btn-ghost btn-sm btn-circle"
-                @click="showArtistSearch = false"
+                @click="closeArtistSearch"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -514,7 +577,18 @@ const resetForm = () => {
                 </svg>
               </button>
             </div>
-            <ArtistSearch ref="currentArtistRef" @artist-selected="handleArtistSelected" />
+            <ArtistSearch
+              ref="currentArtistRef"
+              v-model="currentArtist"
+              @artist-selected="handleArtistSelected"
+            />
+
+            <!-- Add to Event Button (for manual artists) -->
+            <div v-if="showAddToEventButton" class="mt-4 flex justify-end">
+              <button type="button" class="btn-action-solid" @click="addCurrentArtist">
+                Add to Event
+              </button>
+            </div>
           </div>
         </div>
 

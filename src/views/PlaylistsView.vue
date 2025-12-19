@@ -276,7 +276,7 @@ const fetchPlaylistDetails = async (playlist: Playlist) => {
   playlistDetails.value = null;
 
   try {
-    // Get user ID from cookie if available (for future auth)
+    // Get user ID from cookie if available
     const userId =
       document.cookie
         .split('; ')

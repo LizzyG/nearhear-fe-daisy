@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from 'vue-router';
 import { mainNavItems, addMenuItems } from '@/navigation/menu';
 import AddArtistView from '@/views/AddArtistView.vue';
 import AddEventsView from '@/views/AddEventsView.vue';
+import AdminView from '@/views/AdminView.vue';
 import CalendarView from '@/views/CalendarView.vue';
 import AboutView from '@/views/AboutView.vue';
 import FAQView from '@/views/FAQView.vue';
@@ -107,6 +108,12 @@ export const appRoutes: RouteRecordRaw[] = [
     name: 'settings',
     component: routeComponentMap.settings,
     meta: { label: 'Settings' },
+  },
+  {
+    path: '/admin',
+    name: 'admin',
+    component: AdminView,
+    meta: { label: 'Admin' },
   },
   {
     path: '/:pathMatch(.*)*',

@@ -97,6 +97,15 @@ const hasMissingInfo = computed(() => {
   return missingInfo.value.spotify || missingInfo.value.bandcamp || missingInfo.value.instagram;
 });
 
+// Check if user has actually added new information for existing artists
+const hasAddedNewInfo = computed(() => {
+  // For manual artists, this doesn't apply - they're creating new data
+  if (!isExistingArtist.value) return true;
+
+  // For existing artists, check if they've filled in any manual fields
+  return !!(manualSpotifyURL.value || manualBandcampURL.value || manualInstagramURL.value);
+});
+
 // Check if artist is missing streaming URLs (won't appear on app without these)
 const isMissingStreamingUrls = computed(() => {
   if (!selectedArtist.value) return false;
@@ -144,6 +153,10 @@ const isValidInstagramURL = (url: string): boolean => {
 
 // Validation state for manual entries
 const validationErrors = computed(() => ({
+  artistName:
+    !isExistingArtist.value && !selectedArtist.value?.ArtistName?.trim()
+      ? 'Artist name is required'
+      : null,
   spotify:
     manualSpotifyURL.value && !isValidSpotifyURL(manualSpotifyURL.value)
       ? 'Must be a valid Spotify artist URL (e.g., https://open.spotify.com/artist/...)'
@@ -160,6 +173,7 @@ const validationErrors = computed(() => ({
 
 const hasValidationErrors = computed(() => {
   return (
+    !!validationErrors.value.artistName ||
     !!validationErrors.value.spotify ||
     !!validationErrors.value.bandcamp ||
     !!validationErrors.value.instagram
@@ -190,7 +204,13 @@ const getFinalArtistInfo = (): ArtistInfo | null => {
 };
 
 // Expose methods and state for parent components
-defineExpose({ getFinalArtistInfo, hasMissingInfo, hasValidationErrors, isExistingArtist });
+defineExpose({
+  getFinalArtistInfo,
+  hasMissingInfo,
+  hasValidationErrors,
+  hasAddedNewInfo,
+  isExistingArtist,
+});
 
 // Search for artist
 const searchArtist = async () => {
@@ -296,17 +316,25 @@ const selectArtist = (artist: ArtistInfo, fromDatabase: boolean = false) => {
 
 // Create new artist from manual entry
 const createManualArtist = () => {
-  if (!artistName.value.trim()) return;
-
+  // Allow manual entry even without artist name (they can fill it in after)
   const newArtist: ArtistInfo = {
-    ArtistName: artistName.value.trim(),
-    SpotifyURL: manualSpotifyURL.value || undefined,
-    BandcampURL: manualBandcampURL.value || undefined,
+    ArtistName: artistName.value.trim() || '', // Allow empty, user will fill it in
+    SpotifyURL: spotifyLink.value.trim() || manualSpotifyURL.value || undefined,
+    BandcampURL: bandcampLink.value.trim() || manualBandcampURL.value || undefined,
     InstagramURL: manualInstagramURL.value || undefined,
   };
 
   selectedArtist.value = newArtist;
   isExistingArtist.value = false; // Manual entry is always a new artist
+
+  // Pre-populate manual fields with search values if they exist
+  if (spotifyLink.value.trim()) {
+    manualSpotifyURL.value = spotifyLink.value.trim();
+  }
+  if (bandcampLink.value.trim()) {
+    manualBandcampURL.value = bandcampLink.value.trim();
+  }
+
   emit('artistSelected', newArtist);
   emit('update:modelValue', newArtist);
 };
@@ -315,6 +343,9 @@ const createManualArtist = () => {
 const clearSelection = () => {
   selectedArtist.value = null;
   isExistingArtist.value = false;
+  artistName.value = '';
+  spotifyLink.value = '';
+  bandcampLink.value = '';
   searchResults.value = [];
   showResults.value = false;
   spotifySearchResults.value = [];
@@ -341,6 +372,9 @@ watch(
     if (newVal && newVal !== selectedArtist.value) {
       selectedArtist.value = newVal;
       artistName.value = newVal.ArtistName;
+    } else if (!newVal && selectedArtist.value) {
+      // Parent cleared the model, reset the component
+      clearSelection();
     }
   },
   { immediate: true },
@@ -349,8 +383,8 @@ watch(
 
 <template>
   <div class="space-y-4">
-    <!-- Search Inputs -->
-    <div class="space-y-3">
+    <!-- Search Inputs - Hide when artist is selected -->
+    <div v-if="!selectedArtist" class="space-y-3">
       <!-- Artist Name -->
       <div class="form-control">
         <label class="label">
@@ -394,13 +428,13 @@ watch(
     </div>
 
     <!-- Loading State -->
-    <div v-if="isSearching" class="flex items-center gap-2 py-2">
+    <div v-if="isSearching && !selectedArtist" class="flex items-center gap-2 py-2">
       <span class="loading loading-spinner loading-sm"></span>
       <span class="text-base-content/70 text-sm">Searching for artist...</span>
     </div>
 
     <!-- Search Error -->
-    <div v-if="searchError" class="alert alert-error">
+    <div v-if="searchError && !selectedArtist" class="alert alert-error">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         class="h-5 w-5 shrink-0"
@@ -419,14 +453,14 @@ watch(
     </div>
 
     <!-- Spotify Search Loading -->
-    <div v-if="isSearchingSpotify" class="flex items-center gap-2 py-2">
+    <div v-if="isSearchingSpotify && !selectedArtist" class="flex items-center gap-2 py-2">
       <span class="text-spotify loading loading-spinner loading-sm"></span>
       <span class="text-base-content/70 text-sm">Searching Spotify...</span>
     </div>
 
     <!-- Search Results (multiple matches) -->
     <div
-      v-if="showResults && searchResults.length > 1 && !showSpotifyResults"
+      v-if="showResults && searchResults.length > 1 && !showSpotifyResults && !selectedArtist"
       class="rounded-lg border border-base-300 bg-base-100"
     >
       <div class="border-b border-base-300 px-4 py-2">
@@ -537,6 +571,7 @@ watch(
         searchResults.length === 0 &&
         !isSearching &&
         !showSpotifyResults &&
+        !selectedArtist &&
         canSearch
       "
       class="border-warning/50 bg-warning/10 rounded-lg border p-4"
@@ -567,7 +602,7 @@ watch(
 
     <!-- Spotify Search Results -->
     <div
-      v-if="showSpotifyResults && spotifySearchResults.length > 0"
+      v-if="showSpotifyResults && spotifySearchResults.length > 0 && !selectedArtist"
       class="border-spotify/30 bg-spotify/5 rounded-lg border"
     >
       <div class="border-spotify/30 flex items-center gap-2 border-b px-4 py-2">
@@ -620,14 +655,15 @@ watch(
 
     <!-- Spotify Search - No Results -->
     <div
-      v-if="showSpotifyResults && spotifySearchResults.length === 0 && !isSearchingSpotify"
+      v-if="showSpotifyResults && spotifySearchResults.length === 0 && !isSearchingSpotify && !selectedArtist"
       class="border-warning/50 bg-warning/10 rounded-lg border p-4"
     >
       <p class="mb-3 text-sm">
         <strong>No results on Spotify either.</strong> You can add the artist manually:
       </p>
       <button type="button" class="btn-action-solid" @click="createManualArtist">
-        Add "{{ artistName }}" as new artist
+        <span v-if="artistName">Add "{{ artistName }}" as new artist</span>
+        <span v-else>Add as new artist</span>
       </button>
     </div>
 
@@ -657,7 +693,22 @@ watch(
             </svg>
           </div>
           <div class="flex-1">
-            <h3 class="font-semibold text-base-content">{{ selectedArtist.ArtistName }}</h3>
+            <!-- Show editable name for manually created artists -->
+            <div v-if="!isExistingArtist">
+              <input
+                v-model="selectedArtist.ArtistName"
+                type="text"
+                placeholder="Enter artist name..."
+                :class="['input-primary-sm w-full', validationErrors.artistName && 'input-error']"
+              />
+              <p v-if="validationErrors.artistName" class="mt-1 text-xs text-error">
+                {{ validationErrors.artistName }}
+              </p>
+            </div>
+            <!-- Show static name for existing artists from database/Spotify -->
+            <h3 v-else class="font-semibold text-base-content">
+              {{ selectedArtist.ArtistName || 'New Artist' }}
+            </h3>
           </div>
         </div>
         <button
@@ -786,12 +837,18 @@ watch(
         </div>
       </div>
 
-      <!-- Missing Info Prompts -->
-      <div v-if="hasMissingInfo" class="border-base-300/50 mt-4 space-y-3 border-t pt-4">
-        <p class="text-base-content/70 text-sm">Some info is missing. Add what you know:</p>
+      <!-- Missing Info Prompts / Manual Entry Fields -->
+      <div
+        v-if="hasMissingInfo || !isExistingArtist"
+        class="border-base-300/50 mt-4 space-y-3 border-t pt-4"
+      >
+        <p class="text-base-content/70 text-sm">
+          <span v-if="!isExistingArtist">Add artist details:</span>
+          <span v-else>Some info is missing. Add what you know:</span>
+        </p>
 
-        <!-- Missing Spotify -->
-        <div v-if="missingInfo.spotify" class="form-control">
+        <!-- Spotify Field - show if missing OR if manual artist -->
+        <div v-if="missingInfo.spotify || !isExistingArtist" class="form-control">
           <label class="label py-1">
             <span class="label-text text-sm">Spotify Link</span>
           </label>
@@ -806,8 +863,8 @@ watch(
           </p>
         </div>
 
-        <!-- Missing Bandcamp -->
-        <div v-if="missingInfo.bandcamp" class="form-control">
+        <!-- Bandcamp Field - show if missing OR if manual artist -->
+        <div v-if="missingInfo.bandcamp || !isExistingArtist" class="form-control">
           <label class="label py-1">
             <span class="label-text text-sm">Bandcamp Link</span>
           </label>
@@ -822,8 +879,8 @@ watch(
           </p>
         </div>
 
-        <!-- Missing Instagram -->
-        <div v-if="missingInfo.instagram" class="form-control">
+        <!-- Instagram Field - show if missing OR if manual artist -->
+        <div v-if="missingInfo.instagram || !isExistingArtist" class="form-control">
           <label class="label py-1">
             <span class="label-text text-sm">Instagram Link</span>
           </label>

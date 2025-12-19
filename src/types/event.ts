@@ -6,7 +6,7 @@ export interface SupportedCity {
   TzName: string;
 }
 
-export type AgeRange = 0 | 1 | 2; // 0 = All Ages, 1 = 18+, 2 = 21+
+export type AgeRange = 0 | 1 | 2 | 3; // 0 = All Ages, 1 = 18+, 2 = 21+, 3 = Unknown
 
 // Venue type for FullShow
 export interface Venue {

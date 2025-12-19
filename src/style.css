@@ -59,18 +59,21 @@
 
   /* Standard action buttons - outline variant */
   .btn-action-outline {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors;
-    @apply border-2 border-primary bg-transparent text-base-content;
+    @apply inline-flex items-center justify-center rounded-lg border-2 px-4 py-2 text-sm font-medium transition-colors;
+    @apply bg-transparent text-base-content;
+    border-color: color-mix(in oklch, var(--color-primary) 40%, transparent);
   }
 
   .btn-action-outline:hover {
+    border-color: color-mix(in oklch, var(--color-primary) 60%, transparent);
     @apply bg-base-200;
   }
 
   /* Standard action buttons - solid variant */
   .btn-action-solid {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors;
-    @apply border-2 border-primary bg-primary text-primary-content;
+    @apply inline-flex items-center justify-center rounded-lg border-2 px-4 py-2 text-sm font-medium transition-colors;
+    @apply bg-primary text-primary-content;
+    border-color: var(--color-primary);
   }
 
   .btn-action-solid:hover {
@@ -199,6 +202,25 @@
 
   .btn-action-outline-error:disabled {
     @apply cursor-not-allowed opacity-50;
+  }
+
+  /* ============================================
+     Content container utilities
+     ============================================ */
+
+  /* Centered content container - narrow (forms, profiles) */
+  .container-narrow {
+    @apply mx-auto max-w-xl;
+  }
+
+  /* Centered content container - standard (most pages) */
+  .container-standard {
+    @apply mx-auto max-w-2xl;
+  }
+
+  /* Centered content container - wide (articles, FAQs) */
+  .container-wide {
+    @apply mx-auto max-w-3xl;
   }
 
   /* ============================================

@@ -9,6 +9,7 @@ export interface BandcampData {
 }
 
 export interface ArtistInfo {
+  ArtistId?: number;
   ArtistName: string;
   SpotifyArtistId?: string;
   SpotifyURL?: string;

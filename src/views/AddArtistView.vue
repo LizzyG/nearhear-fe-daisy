@@ -3,11 +3,8 @@ import { ref, computed } from 'vue';
 
 import ArtistSearch from '@/components/ArtistSearch.vue';
 import PageHeader from '@/components/layout/PageHeader.vue';
-import { useAuth } from '@/composables/useAuth';
 import type { ArtistInfo } from '@/types/artist';
 import { apiFetch } from '@/utils/api';
-
-const { userId } = useAuth();
 
 const artistSearchRef = ref<InstanceType<typeof ArtistSearch>>();
 const selectedArtist = ref<ArtistInfo | null>(null);
@@ -20,9 +17,22 @@ const showSubmitButton = computed(() => {
   if (!selectedArtist.value) return false;
   if (!artistSearchRef.value) return false;
 
-  // Only show if there's missing info that user can fill in
-  // AND no validation errors
-  return artistSearchRef.value.hasMissingInfo && !artistSearchRef.value.hasValidationErrors;
+  // Check if this is a manually created artist
+  const isManualArtist = !artistSearchRef.value.isExistingArtist;
+  const hasErrors = artistSearchRef.value.hasValidationErrors;
+  const hasMissing = artistSearchRef.value.hasMissingInfo;
+  const hasAdded = artistSearchRef.value.hasAddedNewInfo;
+
+  // For manually created artists, show submit button as long as validation passes
+  if (isManualArtist) {
+    return !hasErrors;
+  }
+
+  // For existing artists from database/Spotify, only show if:
+  // 1. There's missing info to add
+  // 2. User has actually filled in some new information
+  // 3. No validation errors
+  return hasMissing && hasAdded && !hasErrors;
 });
 
 const handleArtistSelected = (artist: ArtistInfo) => {
@@ -31,23 +41,13 @@ const handleArtistSelected = (artist: ArtistInfo) => {
   submitError.value = null;
 };
 
-// Extract Instagram handle from URL if needed
-const extractInstagramHandle = (artist: ArtistInfo): string => {
-  if (artist.InstagramHandle) return artist.InstagramHandle;
-  if (artist.InstagramURL) {
-    const match = artist.InstagramURL.match(/instagram\.com\/([a-zA-Z0-9_.]+)/i);
-    return match ? match[1] : '';
-  }
-  return '';
-};
-
-// Request body type matching Go struct
-interface AddArtistFromUserReq {
-  UserId: string;
+// Request body type for updating existing artists - matches Go UpdateArtistReq
+interface UpdateArtistReq {
+  ArtistId: number;
   ArtistName: string;
-  SpotifyArtistId: string;
-  BandcampUrl: string;
-  InstagramHandle: string;
+  SpotifyURL: string;
+  BandcampURL: string;
+  InstagramURL: string;
 }
 
 const submitArtist = async () => {
@@ -61,18 +61,35 @@ const submitArtist = async () => {
   submitSuccess.value = false;
 
   try {
-    const requestBody: AddArtistFromUserReq = {
-      UserId: userId.value || '',
-      ArtistName: artistData.ArtistName,
-      SpotifyArtistId: artistData.SpotifyArtistId || '',
-      BandcampUrl: artistData.BandcampURL || '',
-      InstagramHandle: extractInstagramHandle(artistData),
-    };
+    // Check if this is a manually created artist (not from database)
+    const isManualArtist = !artistSearchRef.value.isExistingArtist;
 
-    await apiFetch('/media/upsertArtistFromUser', {
-      method: 'POST',
-      body: JSON.stringify(requestBody),
-    });
+    if (isManualArtist) {
+      // For manually created artists, use /media/createArtist with ArtistInfo
+      await apiFetch('/media/createArtist', {
+        method: 'POST',
+        body: JSON.stringify(artistData),
+      });
+    } else {
+      // For existing artists with missing info, use /media/updateArtist
+      // Existing artists must have an ArtistId
+      if (!artistData.ArtistId) {
+        throw new Error('Artist ID is required for updating existing artists');
+      }
+
+      const requestBody: UpdateArtistReq = {
+        ArtistId: artistData.ArtistId,
+        ArtistName: artistData.ArtistName,
+        SpotifyURL: artistData.SpotifyURL || '',
+        BandcampURL: artistData.BandcampURL || '',
+        InstagramURL: artistData.InstagramURL || '',
+      };
+
+      await apiFetch('/media/updateArtist', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      });
+    }
 
     submitSuccess.value = true;
   } catch (err) {

@@ -171,7 +171,7 @@ onMounted(async () => {
       <!-- Logged In State -->
       <div v-if="isLoggedIn" class="space-y-8">
         <!-- User Info Card -->
-        <div class="max-w-xl">
+        <div class="container-narrow">
           <div class="card border border-base-300 bg-base-100 shadow-sm">
             <div class="card-body">
               <div class="flex items-center gap-4">
@@ -221,7 +221,7 @@ onMounted(async () => {
 
         <!-- Your Shows Section -->
         <div>
-          <h2 class="mb-4 flex items-center gap-2 text-xl font-bold text-base-content">
+          <h2 class="container-narrow mb-4 flex items-center gap-2 text-xl font-bold text-base-content">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -241,10 +241,6 @@ onMounted(async () => {
               {{ likedEvents.length }}
             </span>
           </h2>
-
-          <p class="text-base-content/70 mb-4 text-sm">
-            Shows you've saved in {{ selectedCity?.City || 'your city' }}
-          </p>
 
           <!-- Loading State -->
           <div v-if="isLoadingEvents" class="py-8 text-center">
@@ -281,7 +277,7 @@ onMounted(async () => {
       </div>
 
       <!-- Not Logged In State -->
-      <div v-else class="max-w-xl space-y-6">
+      <div v-else class="container-narrow space-y-6">
         <!-- Auth Error Message -->
         <div v-if="isAuthError" class="alert alert-error">
           <svg
