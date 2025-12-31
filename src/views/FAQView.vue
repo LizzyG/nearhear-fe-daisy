@@ -138,7 +138,7 @@ const toggleFaq = (index: number) => {
         </p>
         <a
           href="mailto:feedback@nearhear.app"
-          class="btn-action-solid inline-flex items-center gap-2"
+          class="btn-action-solid"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

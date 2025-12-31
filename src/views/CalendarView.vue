@@ -1340,7 +1340,7 @@ defineExpose({
               <button
                 v-if="filters.Venues && filters.Venues.length > 0"
                 type="button"
-                class="btn btn-sm h-10 w-full border-base-300 bg-base-100 hover:border-primary hover:bg-base-200 md:w-auto md:min-w-[140px]"
+                class="btn-action-outline h-10 w-full md:w-auto md:min-w-[140px]"
                 @click="openVenuesPanel"
               >
                 <svg
@@ -1400,7 +1400,7 @@ defineExpose({
                   (filters.BroadGenres && filters.BroadGenres.length > 0)
                 "
                 type="button"
-                class="btn btn-sm h-10 w-full border-base-300 bg-base-100 hover:border-primary hover:bg-base-200 md:w-auto md:min-w-[140px]"
+                class="btn-action-outline h-10 w-full md:w-auto md:min-w-[140px]"
                 @click="openGenresPanel"
               >
                 <svg
@@ -1454,7 +1454,7 @@ defineExpose({
             <!-- Export to Spotify Button -->
             <button
               type="button"
-              class="btn-action-solid flex h-10 items-center gap-2 whitespace-nowrap"
+              class="btn-action-solid h-10 whitespace-nowrap"
               :disabled="filteredShows.length === 0"
               @click="openExportModal"
             >
@@ -1941,7 +1941,7 @@ defineExpose({
         <button
           v-if="!exportSuccess"
           type="button"
-          class="btn-action-solid flex items-center gap-2"
+          class="btn-action-solid"
           :disabled="isExporting || !exportPlaylistName.trim()"
           @click="exportToSpotify"
         >

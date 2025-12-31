@@ -571,7 +571,7 @@ const resetForm = () => {
           <div v-if="!showArtistSearch">
             <button
               type="button"
-              class="btn-action-outline flex items-center gap-2"
+              class="btn-action-outline"
               @click="showArtistSearch = true"
             >
               <svg

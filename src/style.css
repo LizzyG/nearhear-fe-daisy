@@ -129,7 +129,7 @@
 
   /* Standard action buttons - outline variant */
   .btn-action-outline {
-    @apply inline-flex items-center justify-center rounded-lg border-2 px-4 py-2 text-sm font-medium transition-colors;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 text-sm font-medium transition-colors;
     @apply bg-transparent text-base-content;
     border-color: color-mix(in oklch, var(--color-primary) 40%, transparent);
   }
@@ -141,7 +141,7 @@
 
   /* Standard action buttons - solid variant */
   .btn-action-solid {
-    @apply inline-flex items-center justify-center rounded-lg border-2 px-4 py-2 text-sm font-medium transition-colors;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 text-sm font-medium transition-colors;
     @apply bg-primary text-primary-content;
     /* reduce competing border emphasis and add subtle elevation */
     border-color: color-mix(in oklch, var(--color-primary) 60%, transparent);

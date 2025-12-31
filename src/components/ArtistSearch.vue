@@ -582,7 +582,7 @@ watch(
       <div class="flex flex-wrap gap-2">
         <button
           type="button"
-          class="btn-action-solid flex items-center gap-2"
+          class="btn-action-solid"
           :disabled="isSearchingSpotify"
           @click="searchSpotify"
         >
