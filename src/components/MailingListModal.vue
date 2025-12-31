@@ -270,13 +270,13 @@ onUnmounted(() => {
                 <label
                   v-for="city in supportedCities"
                   :key="city.City + city.StateAbbrev"
-                  class="app-checkbox-label"
+                  class="checkbox-app-label"
                 >
                   <input
                     v-model="selectedCityKeys"
                     type="checkbox"
                     :value="makeCityKey(city)"
-                    class="app-checkbox"
+                    class="checkbox-app"
                   />
                   <span class="text-sm">{{ city.City }}, {{ city.StateAbbrev }}</span>
                 </label>

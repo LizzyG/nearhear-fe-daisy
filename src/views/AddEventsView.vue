@@ -672,7 +672,7 @@ const resetForm = () => {
 
           <!-- Free Toggle -->
           <label class="flex cursor-pointer items-center gap-3">
-            <input v-model="isFree" type="checkbox" class="app-checkbox" />
+            <input v-model="isFree" type="checkbox" class="checkbox-app" />
             <span class="text-sm">This is a free event</span>
           </label>
 

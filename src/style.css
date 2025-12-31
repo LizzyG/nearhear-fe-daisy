@@ -84,28 +84,42 @@
     color: inherit;
   }
 
-  /* Checkbox styling */
-  .checkbox {
-    @apply border border-base-300;
+  /* ============================================
+     Checkbox - consistent styling across app
+     ============================================ */
+
+  /* Base checkbox style - matches form input aesthetics */
+  .checkbox-app {
+    @apply h-5 w-5 cursor-pointer appearance-none rounded-lg border-2 transition-all;
+    border-color: color-mix(in oklch, var(--color-primary) 40%, transparent);
+    background-color: transparent;
   }
 
-  .checkbox:checked {
-    @apply border-primary;
+  .checkbox-app:hover {
+    border-color: color-mix(in oklch, var(--color-primary) 60%, transparent);
   }
 
-  /* App checkbox - smaller variant with primary accent */
-  .app-checkbox {
-    @apply checkbox-sm rounded-md border-2 border-primary bg-transparent accent-primary;
-    height: 1rem;
+  .checkbox-app:checked {
+    @apply border-primary bg-primary;
+    /* White checkmark via SVG background */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: 14px 14px;
+    background-position: center;
+    background-repeat: no-repeat;
   }
 
-  .app-checkbox:checked {
-    @apply border-primary;
-    background-color: color-mix(in oklch, var(--color-primary) 10%, transparent);
+  .checkbox-app:focus {
+    @apply outline-none ring-2;
+    --tw-ring-color: color-mix(in oklch, var(--color-primary) 20%, transparent);
   }
 
-  .app-checkbox-label {
-    @apply inline-flex items-center space-x-2 text-sm;
+  .checkbox-app:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+
+  /* Checkbox label wrapper */
+  .checkbox-app-label {
+    @apply inline-flex cursor-pointer items-center gap-2 text-sm;
   }
 
   .app-city-note {

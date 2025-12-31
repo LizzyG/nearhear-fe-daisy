@@ -1553,7 +1553,7 @@ defineExpose({
               <input
                 type="checkbox"
                 :checked="isPendingVenueSelected(venue)"
-                class="checkbox checkbox-primary border-base-300"
+                class="checkbox-app"
                 @change="togglePendingVenue(venue)"
               />
               <span class="flex-1">{{ venue }}</span>
@@ -1617,7 +1617,7 @@ defineExpose({
                 <input
                   type="checkbox"
                   :checked="isPendingSpotifyGenreSelected(genre)"
-                  class="checkbox checkbox-primary border-base-300"
+                  class="checkbox-app"
                   @change="togglePendingSpotifyGenre(genre)"
                 />
                 <span class="flex-1">{{ genre }}</span>
@@ -1636,7 +1636,7 @@ defineExpose({
                 <input
                   type="checkbox"
                   :checked="isPendingBroadGenreSelected(genre)"
-                  class="checkbox checkbox-primary border-base-300"
+                  class="checkbox-app"
                   @change="togglePendingBroadGenre(genre)"
                 />
                 <span class="flex-1">{{ genre }}</span>
