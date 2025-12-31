@@ -145,6 +145,12 @@ const cityLoadError = ref<string | null>(null);
 const isCalendarOpen = ref(false);
 const pickerRoot = ref<HTMLElement | null>(null);
 
+// Modal refs for native dialog API
+const calendarModal = ref<HTMLDialogElement | null>(null);
+const venuesModal = ref<HTMLDialogElement | null>(null);
+const genresModal = ref<HTMLDialogElement | null>(null);
+const exportModal = ref<HTMLDialogElement | null>(null);
+
 const cityEndpoint = '/media/getSupportedCities';
 const filtersEndpoint = '/media/getFilters';
 
@@ -894,11 +900,13 @@ type CalendarRangeElement = HTMLElement & {
 
 const openCalendar = () => {
   isCalendarOpen.value = true;
+  calendarModal.value?.showModal();
 };
 
 const closeCalendar = () => {
   isCalendarOpen.value = false;
   dateRangeLimitWarning.value = false;
+  calendarModal.value?.close();
 };
 
 const handleRangeChange = (event: Event) => {
@@ -1033,22 +1041,28 @@ const filteredBroadGenres = computed(() => {
 
 // Panel management functions
 const openVenuesPanel = () => {
+  console.log('openVenuesPanel');
   pendingVenues.value = [...selectedVenues.value];
   isVenuesPanelOpen.value = true;
+  console.log('venuesModal', venuesModal.value);
+  venuesModal.value?.showModal();
 };
 
 const openGenresPanel = () => {
   pendingSpotifyGenres.value = [...selectedSpotifyGenres.value];
   pendingBroadGenres.value = [...selectedBroadGenres.value];
   isGenresPanelOpen.value = true;
+  genresModal.value?.showModal();
 };
 
 const closeVenuesPanel = () => {
   isVenuesPanelOpen.value = false;
+  venuesModal.value?.close();
 };
 
 const closeGenresPanel = () => {
   isGenresPanelOpen.value = false;
+  genresModal.value?.close();
 };
 
 const applyVenuesFilters = () => {
@@ -1252,6 +1266,7 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  document.documentElement.classList.remove('modal-open');
   document.removeEventListener('click', handleDocumentClick);
 });
 
@@ -1265,12 +1280,14 @@ const openExportModal = () => {
   exportError.value = null;
   exportSuccess.value = false;
   isExportModalOpen.value = true;
+  exportModal.value?.showModal();
 };
 
 const closeExportModal = () => {
   isExportModalOpen.value = false;
   exportPlaylistName.value = '';
   exportError.value = null;
+  exportModal.value?.close();
 };
 
 const exportToSpotify = async () => {
@@ -1575,40 +1592,46 @@ defineExpose({
         </div>
       </div>
 
-      <div :class="['modal', isCalendarOpen && 'modal-open']" @keydown.stop="handleCalendarKeydown">
+      <dialog
+        ref="calendarModal"
+        class="modal"
+        @keydown.stop="handleCalendarKeydown"
+      >
         <div class="modal-box max-w-fit border border-base-300 bg-base-200 shadow-lg">
-          <div class="overflow-visible">
-            <calendar-range
-              :value="calendarRangeValue"
-              :first-day-of-week="0"
-              :today="''"
-              @change="handleRangeChange"
-            >
-              <calendar-month></calendar-month>
-            </calendar-range>
-          </div>
+            <div class="overflow-visible">
+              <calendar-range
+                :value="calendarRangeValue"
+                :first-day-of-week="0"
+                :today="''"
+                @change="handleRangeChange"
+              >
+                <calendar-month></calendar-month>
+              </calendar-range>
+            </div>
 
-          <!-- Date range limit warning -->
-          <div
-            v-if="dateRangeLimitWarning"
-            class="bg-error/10 border-error/30 mt-3 max-w-[300px] rounded-lg border p-3"
-          >
-            <p class="whitespace-normal break-words text-center text-sm text-error">
-              Please select a date range of {{ MAX_DATE_RANGE_DAYS }} days or less.
-            </p>
-          </div>
+            <!-- Date range limit warning -->
+            <div
+              v-if="dateRangeLimitWarning"
+              class="bg-error/10 border-error/30 mt-3 max-w-[300px] rounded-lg border p-3"
+            >
+              <p class="whitespace-normal break-words text-center text-sm text-error">
+                Please select a date range of {{ MAX_DATE_RANGE_DAYS }} days or less.
+              </p>
+            </div>
 
           <div class="mt-4 flex items-center justify-end gap-2">
             <button type="button" class="btn-action-outline" @click="clearSelection">Clear</button>
             <button type="button" class="btn-action-outline" @click="closeCalendar">Close</button>
           </div>
         </div>
-        <div class="modal-backdrop" @click="closeCalendar"></div>
-      </div>
+        <form method="dialog" class="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
     </div>
 
     <!-- Venues Filter Panel -->
-    <div :class="['modal', isVenuesPanelOpen && 'modal-open']">
+    <dialog ref="venuesModal" class="modal">
       <div
         class="modal-box w-full max-w-2xl space-y-0 border border-base-300 bg-base-100 shadow-lg"
       >
@@ -1664,11 +1687,13 @@ defineExpose({
           </button>
         </div>
       </div>
-      <div class="modal-backdrop" @click="closeVenuesPanel"></div>
-    </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
 
     <!-- Genres Filter Panel -->
-    <div :class="['modal', isGenresPanelOpen && 'modal-open']">
+    <dialog ref="genresModal" class="modal">
       <div
         class="modal-box w-full max-w-2xl space-y-0 border border-base-300 bg-base-100 shadow-lg"
       >
@@ -1746,8 +1771,10 @@ defineExpose({
           </button>
         </div>
       </div>
-      <div class="modal-backdrop" @click="closeGenresPanel"></div>
-    </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
 
     <!-- Active Filters Chips -->
     <div
@@ -1958,7 +1985,7 @@ defineExpose({
   </section>
 
   <!-- Export to Spotify Modal -->
-  <div :class="['modal', isExportModalOpen && 'modal-open']">
+  <dialog ref="exportModal" class="modal">
     <div class="modal-box border border-base-300 bg-base-200 shadow-lg">
       <h3 class="mb-4 text-lg font-bold text-primary">Export to Spotify Playlist</h3>
 
@@ -2040,6 +2067,8 @@ defineExpose({
         </button>
       </div>
     </div>
-    <div class="modal-backdrop" @click="closeExportModal"></div>
-  </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
 </template>
