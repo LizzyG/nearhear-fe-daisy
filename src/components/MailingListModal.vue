@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 
 import { apiFetch } from '@/utils/api';
+import { useCity } from '@/composables/useCity';
+import { usePostHog } from '@/composables/usePostHog';
 
 const STORAGE_KEY_DISMISSED = 'nearhear-mailing-dismissed';
 const STORAGE_KEY_SUBSCRIBED = 'nearhear-mailing-subscribed';
@@ -17,6 +19,11 @@ const email = ref('');
 const isSubmitting = ref(false);
 const submitError = ref<string | null>(null);
 const submitSuccess = ref(false);
+
+// Cities
+const { supportedCities, fetchSupportedCities, makeCityKey } = useCity();
+const selectedCityKeys = ref<string[]>([]);
+const posthog = usePostHog();
 
 let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -51,6 +58,23 @@ const shouldShowModal = (): boolean => {
   return false;
 };
 
+// Derived helper: whether Portland is pre-selected
+const hasSelectedAny = computed(() => selectedCityKeys.value.length > 0);
+
+// Ensure Portland is selected by default if available
+const ensureDefaultCities = () => {
+  if (selectedCityKeys.value.length > 0) return;
+  const portland = supportedCities.value.find((c) => c.City.toLowerCase() === 'portland');
+  if (portland) {
+    selectedCityKeys.value = [makeCityKey(portland)];
+  } else if (supportedCities.value.length > 0) {
+    const first = supportedCities.value[0];
+    if (first) {
+      selectedCityKeys.value = [makeCityKey(first)];
+    }
+  }
+};
+
 // Increment visit count
 const incrementVisitCount = () => {
   const current = parseInt(localStorage.getItem(STORAGE_KEY_VISIT_COUNT) || '0', 10);
@@ -70,6 +94,11 @@ const canSubmit = (): boolean => {
 const subscribe = async () => {
   if (!canSubmit()) return;
 
+  // ensure cities are set
+  if (supportedCities.value.length > 0) {
+    ensureDefaultCities();
+  }
+
   isSubmitting.value = true;
   submitError.value = null;
 
@@ -78,11 +107,19 @@ const subscribe = async () => {
       email: email.value,
       source: 'modal',
     });
+
+    if (selectedCityKeys.value.length > 0) {
+      params.set('cities', selectedCityKeys.value.join(','));
+    }
+
     await apiFetch(`/media/mailingList/subscribe?${params.toString()}`);
 
     submitSuccess.value = true;
     localStorage.setItem(STORAGE_KEY_SUBSCRIBED, 'true');
     localStorage.removeItem(STORAGE_KEY_VISIT_COUNT);
+
+    // track event
+    posthog.capture('mailing_list_subscribed', { source: 'modal', cities: selectedCityKeys.value });
 
     // Auto-close after success
     setTimeout(() => {
@@ -107,11 +144,19 @@ const closeModal = () => {
 const dismissModal = () => {
   localStorage.setItem(STORAGE_KEY_DISMISSED, String(Date.now()));
   localStorage.setItem(STORAGE_KEY_VISIT_COUNT, '0'); // Reset visit count on dismiss
+
+  // track dismissal
+  posthog.capture('mailing_modal_dismissed', { source: 'modal' });
+
   closeModal();
 };
 
-onMounted(() => {
+onMounted(async () => {
   incrementVisitCount();
+
+  // load cities for selection and default to Portland
+  await fetchSupportedCities();
+  ensureDefaultCities();
 
   if (shouldShowModal()) {
     timeoutId = setTimeout(() => {
@@ -212,6 +257,36 @@ onUnmounted(() => {
               autocomplete="email"
             />
 
+            <!-- City selection -->
+            <div v-if="supportedCities.length" class="mt-3 text-left">
+              <p class="text-base-content/60 mb-2 text-sm">
+                Select the cities you want weekly updates for.
+              </p>
+              <p class="app-city-note">
+                <strong>Note:</strong> right now we're only doing weekly emails for Portland.
+              </p>
+
+              <div class="mt-3 grid max-h-36 grid-cols-2 gap-2 overflow-auto">
+                <label
+                  v-for="city in supportedCities"
+                  :key="city.City + city.StateAbbrev"
+                  class="app-checkbox-label"
+                >
+                  <input
+                    v-model="selectedCityKeys"
+                    type="checkbox"
+                    :value="makeCityKey(city)"
+                    class="app-checkbox"
+                  />
+                  <span class="text-sm">{{ city.City }}, {{ city.StateAbbrev }}</span>
+                </label>
+              </div>
+
+              <p v-if="!hasSelectedAny" class="text-base-content/50 mt-2 text-sm">
+                We'll default to Portland if you don't pick any.
+              </p>
+            </div>
+
             <!-- Error -->
             <p v-if="submitError" class="text-sm text-error">{{ submitError }}</p>
 
@@ -223,7 +298,8 @@ onUnmounted(() => {
 
           <button
             type="button"
-            class="text-base-content/50 hover:text-base-content/70 mt-4 text-sm"
+            class="btn-action-outline mt-4 w-full"
+            aria-label="Dismiss mailing list modal"
             @click="dismissModal"
           >
             No thanks, maybe later

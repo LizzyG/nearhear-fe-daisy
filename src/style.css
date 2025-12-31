@@ -1,5 +1,3 @@
-@import './styles/themes.css';
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -93,6 +91,26 @@
 
   .checkbox:checked {
     @apply border-primary;
+  }
+
+  /* App checkbox - smaller variant with primary accent */
+  .app-checkbox {
+    @apply checkbox-sm rounded-md border-2 border-primary bg-transparent accent-primary;
+    height: 1rem;
+  }
+
+  .app-checkbox:checked {
+    @apply border-primary;
+    background-color: color-mix(in oklch, var(--color-primary) 10%, transparent);
+  }
+
+  .app-checkbox-label {
+    @apply inline-flex items-center space-x-2 text-sm;
+  }
+
+  .app-city-note {
+    @apply mt-3 text-sm;
+    color: color-mix(in oklch, var(--color-base-content) 60%, transparent);
   }
 
   /* Standard action buttons - outline variant */
@@ -291,7 +309,8 @@
   }
 
   .link-subtle {
-    @apply text-base-content/70 transition-colors hover:text-base-content;
+    @apply transition-colors hover:text-base-content;
+    color: color-mix(in oklch, var(--color-base-content) 70%, transparent);
   }
 
   /* ============================================
