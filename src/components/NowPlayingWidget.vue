@@ -34,7 +34,6 @@ interface GetArtistEventsRequest {
   PlaylistUri: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const window: Window & {
   NowPlaying?: {
     components: unknown;

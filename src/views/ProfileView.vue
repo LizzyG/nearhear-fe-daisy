@@ -221,7 +221,9 @@ onMounted(async () => {
 
         <!-- Your Shows Section -->
         <div>
-          <h2 class="container-narrow mb-4 flex items-center gap-2 text-xl font-bold text-base-content">
+          <h2
+            class="container-narrow mb-4 flex items-center gap-2 text-xl font-bold text-base-content"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"

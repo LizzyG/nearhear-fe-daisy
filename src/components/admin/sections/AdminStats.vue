@@ -50,9 +50,7 @@ const statCards = [
   <div class="space-y-6">
     <div>
       <h2 class="heading-section">Statistics</h2>
-      <p class="text-base-content/60 mt-1 text-sm">
-        Overview of application metrics and activity.
-      </p>
+      <p class="text-base-content/60 mt-1 text-sm">Overview of application metrics and activity.</p>
     </div>
 
     <!-- Stats Grid -->
@@ -206,4 +204,3 @@ const statCards = [
     </template>
   </div>
 </template>
-

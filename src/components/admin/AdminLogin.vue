@@ -47,7 +47,9 @@ const handleCancel = () => {
         <div class="card-body p-8">
           <!-- Header -->
           <div class="mb-6 text-center">
-            <div class="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+            <div
+              class="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -91,7 +93,7 @@ const handleCancel = () => {
           </div>
 
           <!-- Login Form -->
-          <form @submit.prevent="handleSubmit" class="space-y-4">
+          <form class="space-y-4" @submit.prevent="handleSubmit">
             <div class="form-control">
               <label class="label" for="admin-username">
                 <span class="label-text font-medium">Username</span>
@@ -144,4 +146,3 @@ const handleCancel = () => {
     </div>
   </div>
 </template>
-

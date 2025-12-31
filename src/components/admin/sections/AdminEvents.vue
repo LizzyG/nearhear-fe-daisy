@@ -13,9 +13,7 @@ const events = ref<{ id: string; name: string; date: string; venue: string; stat
     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div>
         <h2 class="heading-section">Manage Events</h2>
-        <p class="text-base-content/60 mt-1 text-sm">
-          View, edit, and manage events.
-        </p>
+        <p class="text-base-content/60 mt-1 text-sm">View, edit, and manage events.</p>
       </div>
 
       <button class="btn-action-solid w-full md:w-auto">
@@ -101,4 +99,3 @@ const events = ref<{ id: string; name: string; date: string; venue: string; stat
     </div>
   </div>
 </template>
-

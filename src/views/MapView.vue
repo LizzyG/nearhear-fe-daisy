@@ -18,44 +18,7 @@ L.Icon.Default.mergeOptions({
 
 import PageHeader from '@/components/layout/PageHeader.vue';
 import { resolveApiPath } from '@/config/api';
-
-// Types
-interface City {
-  City: string;
-  State: string;
-  StateAbbrev: string;
-  CountryAbbrev: string;
-  TzName: string;
-}
-
-interface VenueCity {
-  City: string;
-  State: string;
-  StateAbbrev: string;
-  CountryAbbrev: string;
-  TzName: string;
-}
-
-interface Venue {
-  Name: string;
-  GoogleName: string;
-  Status: string;
-  StreetNumber: string;
-  Street: string;
-  CityStr: string;
-  Zip: string;
-  ZipSuffix: string;
-  State: string;
-  Address: string;
-  Neighborhood: string;
-  Latitude: number;
-  Longitude: number;
-  GoogleId: string;
-  Website: string;
-  InstagramHandle: string;
-  MapsUrl: string;
-  City: VenueCity;
-}
+import type { SupportedCity, Venue } from '@/types/event';
 
 // City coordinates for centering map
 const cityCoordinates: Record<string, [number, number]> = {
@@ -72,7 +35,7 @@ const cityCoordinates: Record<string, [number, number]> = {
 };
 
 // State
-const supportedCities = ref<City[]>([]);
+const supportedCities = ref<SupportedCity[]>([]);
 const STORAGE_KEY = 'nearhear-selected-city';
 const selectedCityKey = ref<string | null>(localStorage.getItem(STORAGE_KEY));
 
@@ -92,7 +55,7 @@ const searchQuery = ref('');
 // Endpoints
 const citiesEndpoint = resolveApiPath('/media/getSupportedCities');
 
-const makeCityKey = (city: City) => `${city.City}-${city.StateAbbrev}`;
+const makeCityKey = (city: SupportedCity) => `${city.City}-${city.StateAbbrev}`;
 
 const selectedCity = computed(() => {
   if (!selectedCityKey.value) return null;
@@ -217,7 +180,7 @@ const fetchSupportedCities = async () => {
       throw new Error(`Failed to load cities (status ${response.status})`);
     }
 
-    const data = (await response.json()) as City[];
+    const data = (await response.json()) as SupportedCity[];
     supportedCities.value = data;
 
     // Check if stored city exists

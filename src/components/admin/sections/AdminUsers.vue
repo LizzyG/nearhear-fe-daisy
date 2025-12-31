@@ -12,9 +12,7 @@ const users = ref<{ id: string; email: string; createdAt: string; isActive: bool
     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div>
         <h2 class="heading-section">Manage Users</h2>
-        <p class="text-base-content/60 mt-1 text-sm">
-          View and manage user accounts.
-        </p>
+        <p class="text-base-content/60 mt-1 text-sm">View and manage user accounts.</p>
       </div>
 
       <button class="btn-action-solid w-full md:w-auto">
@@ -56,20 +54,13 @@ const users = ref<{ id: string; email: string; createdAt: string; isActive: bool
         </thead>
         <tbody>
           <tr v-if="users.length === 0">
-            <td colspan="4" class="text-base-content/60 py-8 text-center">
-              No users to display.
-            </td>
+            <td colspan="4" class="text-base-content/60 py-8 text-center">No users to display.</td>
           </tr>
           <tr v-for="user in users" :key="user.id" class="hover:bg-base-200">
             <td>{{ user.email }}</td>
             <td>{{ user.createdAt }}</td>
             <td>
-              <span
-                :class="[
-                  'badge badge-sm',
-                  user.isActive ? 'badge-success' : 'badge-error',
-                ]"
-              >
+              <span :class="['badge badge-sm', user.isActive ? 'badge-success' : 'badge-error']">
                 {{ user.isActive ? 'Active' : 'Inactive' }}
               </span>
             </td>
@@ -85,4 +76,3 @@ const users = ref<{ id: string; email: string; createdAt: string; isActive: bool
     </div>
   </div>
 </template>
-

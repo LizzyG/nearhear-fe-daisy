@@ -46,7 +46,7 @@ export const useAdminAuth = () => {
    */
   const login = async (
     username: string,
-    password: string
+    password: string,
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       const payload = { username, password };
@@ -114,4 +114,3 @@ export const useAdminAuth = () => {
     refreshAuthState,
   };
 };
-

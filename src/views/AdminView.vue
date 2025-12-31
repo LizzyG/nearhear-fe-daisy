@@ -71,10 +71,7 @@ const handleLogout = () => {
     <template v-else>
       <PageHeader title="Admin Panel">
         <div class="mt-4">
-          <button
-            class="btn-action-outline-error text-sm"
-            @click="handleLogout"
-          >
+          <button class="btn-action-outline-error text-sm" @click="handleLogout">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -243,4 +240,3 @@ const handleLogout = () => {
     </template>
   </section>
 </template>
-

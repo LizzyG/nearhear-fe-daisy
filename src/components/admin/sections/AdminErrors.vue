@@ -4,7 +4,9 @@ import { ref } from 'vue';
 const severityFilter = ref<'all' | 'error' | 'warning' | 'info'>('all');
 
 // Placeholder data structure
-const errors = ref<{ id: string; message: string; timestamp: string; severity: string; source: string }[]>([]);
+const errors = ref<
+  { id: string; message: string; timestamp: string; severity: string; source: string }[]
+>([]);
 
 const clearErrors = () => {
   // TODO: Implement error clearing
@@ -55,7 +57,10 @@ const clearErrors = () => {
 
     <!-- Errors List -->
     <div class="space-y-3">
-      <div v-if="errors.length === 0" class="rounded-lg border border-base-300 bg-base-200 p-8 text-center">
+      <div
+        v-if="errors.length === 0"
+        class="rounded-lg border border-base-300 bg-base-200 p-8 text-center"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
@@ -71,7 +76,9 @@ const clearErrors = () => {
             d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <p class="text-base-content/60 mt-3">No errors to display. Everything is running smoothly!</p>
+        <p class="text-base-content/60 mt-3">
+          No errors to display. Everything is running smoothly!
+        </p>
       </div>
 
       <div
@@ -112,4 +119,3 @@ const clearErrors = () => {
     </div>
   </div>
 </template>
-

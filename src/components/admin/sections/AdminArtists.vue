@@ -12,9 +12,7 @@ const artists = ref<{ id: string; name: string; genres: string[]; eventCount: nu
     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div>
         <h2 class="heading-section">Manage Artists</h2>
-        <p class="text-base-content/60 mt-1 text-sm">
-          View, edit, and manage artist profiles.
-        </p>
+        <p class="text-base-content/60 mt-1 text-sm">View, edit, and manage artist profiles.</p>
       </div>
 
       <button class="btn-action-solid w-full md:w-auto">
@@ -86,4 +84,3 @@ const artists = ref<{ id: string; name: string; genres: string[]; eventCount: nu
     </div>
   </div>
 </template>
-

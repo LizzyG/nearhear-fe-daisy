@@ -12,9 +12,7 @@ const venues = ref<{ id: string; name: string; address: string; eventCount: numb
     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div>
         <h2 class="heading-section">Manage Venues</h2>
-        <p class="text-base-content/60 mt-1 text-sm">
-          View, edit, and manage venue information.
-        </p>
+        <p class="text-base-content/60 mt-1 text-sm">View, edit, and manage venue information.</p>
       </div>
 
       <button class="btn-action-solid w-full md:w-auto">
@@ -76,4 +74,3 @@ const venues = ref<{ id: string; name: string; address: string; eventCount: numb
     </div>
   </div>
 </template>
-
