@@ -5,7 +5,7 @@ import ArtistSearch from '@/components/ArtistSearch.vue';
 import VenueSearch from '@/components/VenueSearch.vue';
 import PageHeader from '@/components/layout/PageHeader.vue';
 import type { ArtistInfo } from '@/types/artist';
-import type { SupportedCity, AgeRange, FullShow, ShowArtistInfo, Venue } from '@/types/event';
+import type { SupportedCity, AgeRange, UserAddedEvent, EventArtistRef, Venue } from '@/types/event';
 import { apiFetch } from '@/utils/api';
 
 // Minimum date (today) for the date picker
@@ -236,24 +236,48 @@ const closeArtistSearch = () => {
   showArtistSearch.value = false;
 };
 
-// Extract Instagram handle from URL if needed
-const extractInstagramHandle = (artist: ArtistInfo): string => {
-  if (artist.InstagramHandle) return artist.InstagramHandle;
-  if (artist.InstagramURL) {
-    const match = artist.InstagramURL.match(/instagram\.com\/([a-zA-Z0-9_.]+)/i);
-    return match ? match[1] : '';
+// Helper to lookup and potentially create an artist
+const lookupOrCreateArtist = async (artist: ArtistInfo): Promise<EventArtistRef> => {
+  // Validate that we have an artist name (required for lookup and creation)
+  if (!artist.ArtistName?.trim()) {
+    throw new Error('Artist name is required to add an artist to the event');
   }
-  return '';
-};
 
-// Extract Bandcamp slug from URL if needed
-const extractBandcampSlug = (artist: ArtistInfo): string => {
-  if (artist.BandcampArtistSlug) return artist.BandcampArtistSlug;
-  if (artist.BandcampURL) {
-    const match = artist.BandcampURL.match(/https?:\/\/([a-zA-Z0-9-]+)\.bandcamp\.com/i);
-    return match ? match[1] : '';
+  try {
+    // First, try to look up the artist by name, Spotify, or Bandcamp
+    const params = new URLSearchParams();
+    params.append('name', artist.ArtistName.trim());
+    if (artist.SpotifyURL) {
+      params.append('spotify', artist.SpotifyURL);
+    }
+    if (artist.BandcampURL) {
+      params.append('bandcamp', artist.BandcampURL);
+    }
+
+    const existingArtists = await apiFetch<ArtistInfo[]>(
+      `/media/getArtistByName?${params.toString()}`,
+    );
+
+    // If we found a matching artist, use it
+    if (existingArtists && existingArtists.length > 0) {
+      const existing = existingArtists[0];
+      return {
+        artist_id: existing.ArtistId!,
+        artist_name: existing.ArtistName,
+      };
+    }
+
+    // No match found, create new artist
+    const response = await apiFetch<EventArtistRef>('/media/createArtist', {
+      method: 'POST',
+      body: JSON.stringify(artist),
+    });
+    return response;
+  } catch (err) {
+    throw new Error(
+      `Failed to add artist "${artist.ArtistName}": ${err instanceof Error ? err.message : 'Unknown error'}`,
+    );
   }
-  return '';
 };
 
 // Form submission
@@ -275,32 +299,44 @@ const submitEvent = async () => {
       throw new Error('Venue information is required');
     }
 
-    // Build artist array in ShowArtistInfo format
-    const showArtists: ShowArtistInfo[] = artists.value.map((artist) => ({
-      ArtistName: artist.ArtistName,
-      SpotifyArtistId: artist.SpotifyArtistId || undefined,
-      InstagramHandle: extractInstagramHandle(artist) || undefined,
-      BandcampArtistSlug: extractBandcampSlug(artist) || undefined,
-      BandcampURL: artist.BandcampURL || undefined,
-      Genres: artist.Genres || undefined,
-    }));
+    if (!selectedCity.value) {
+      throw new Error('City is required');
+    }
 
-    // Build FullShow object
-    const fullShow: FullShow = {
-      Date: dateTime.toISOString(),
-      PriceLow: isFree.value ? 0 : (priceLow.value ?? 0),
-      PriceHigh: isFree.value ? 0 : (priceHigh.value ?? 0),
-      AgeRange: ageRange.value,
-      Venue: venueData,
-      Urls: [eventUrl.value.trim()],
-      ImgUrl: imageUrl.value.trim() || '',
-      Artists: showArtists,
-      Status: 'pending',
+    // Lookup/create artists that don't have an ID yet
+    const eventArtists: EventArtistRef[] = [];
+    for (const artist of artists.value) {
+      if (artist.ArtistId) {
+        // Artist already exists in database (from Spotify search or database search)
+        eventArtists.push({
+          artist_id: artist.ArtistId,
+          artist_name: artist.ArtistName,
+        });
+      } else {
+        // Need to lookup or create this artist
+        // This will check for duplicates before creating
+        const artistRef = await lookupOrCreateArtist(artist);
+        eventArtists.push(artistRef);
+      }
+    }
+
+    // Build UserAddedEvent object
+    const userEvent: UserAddedEvent = {
+      date: dateTime.toISOString(),
+      price_low: isFree.value ? 0 : (priceLow.value ?? undefined),
+      price_high: isFree.value ? 0 : (priceHigh.value ?? undefined),
+      age_range: ageRange.value,
+      url: eventUrl.value.trim(),
+      img_url: imageUrl.value.trim() || undefined,
+      venue_id: venueData.Id,
+      venue_name: venueData.Name,
+      city: selectedCity.value,
+      artists: eventArtists,
     };
 
     await apiFetch('/media/upsertUserEvent', {
       method: 'POST',
-      body: JSON.stringify(fullShow),
+      body: JSON.stringify(userEvent),
     });
 
     submitSuccess.value = true;
@@ -446,11 +482,7 @@ const resetForm = () => {
           <label class="label">
             <span class="label-text font-medium"> Venue <span class="text-error">*</span> </span>
           </label>
-          <VenueSearch
-            ref="venueSearchRef"
-            v-model="selectedVenue"
-            :city="selectedCity"
-          />
+          <VenueSearch ref="venueSearchRef" v-model="selectedVenue" :city="selectedCity" />
           <p v-if="validationErrors.venue && !selectedVenue" class="mt-1 text-xs text-error">
             {{ validationErrors.venue }}
           </p>
@@ -640,7 +672,7 @@ const resetForm = () => {
 
           <!-- Free Toggle -->
           <label class="flex cursor-pointer items-center gap-3">
-            <input v-model="isFree" type="checkbox" class="checkbox checkbox-primary" />
+            <input v-model="isFree" type="checkbox" class="app-checkbox" />
             <span class="text-sm">This is a free event</span>
           </label>
 

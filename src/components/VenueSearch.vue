@@ -64,13 +64,8 @@ const isValidInstagramHandle = (handle: string): boolean => {
 // Validation errors
 const validationErrors = computed(() => ({
   venueName:
-    !isExistingVenue.value && !selectedVenue.value?.Name?.trim()
-      ? 'Venue name is required'
-      : null,
-  website:
-    manualWebsite.value && !isValidURL(manualWebsite.value)
-      ? 'Must be a valid URL'
-      : null,
+    !isExistingVenue.value && !selectedVenue.value?.Name?.trim() ? 'Venue name is required' : null,
+  website: manualWebsite.value && !isValidURL(manualWebsite.value) ? 'Must be a valid URL' : null,
   instagram:
     manualInstagramHandle.value && !isValidInstagramHandle(manualInstagramHandle.value)
       ? 'Must be a valid Instagram handle (no @ symbol)'
@@ -89,7 +84,9 @@ const hasValidationErrors = computed(() => {
 const getFinalVenueInfo = (): Venue | null => {
   if (!selectedVenue.value) return null;
 
-  const website = manualWebsite.value ? normalizeURL(manualWebsite.value) : selectedVenue.value.Website;
+  const website = manualWebsite.value
+    ? normalizeURL(manualWebsite.value)
+    : selectedVenue.value.Website;
   const instagramHandle = manualInstagramHandle.value || selectedVenue.value.InstagramHandle;
   const address = manualAddress.value || selectedVenue.value.Address;
 
@@ -211,11 +208,14 @@ watch(venueName, (newValue) => {
 });
 
 // Watch for city changes - clear venue when city changes
-watch(() => props.city, () => {
-  if (selectedVenue.value) {
-    clearSelection();
-  }
-});
+watch(
+  () => props.city,
+  () => {
+    if (selectedVenue.value) {
+      clearSelection();
+    }
+  },
+);
 
 // Sync with v-model
 watch(
@@ -264,9 +264,7 @@ watch(
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        <p v-if="!city" class="mt-1 text-xs text-base-content/50">
-          Please select a city first
-        </p>
+        <p v-if="!city" class="text-base-content/50 mt-1 text-xs">Please select a city first</p>
       </div>
     </div>
 
@@ -308,7 +306,7 @@ watch(
           v-for="(venue, index) in searchResults"
           :key="index"
           type="button"
-          class="hover:bg-base-200 w-full border-b border-base-300 px-4 py-3 text-left transition-colors last:border-b-0"
+          class="w-full border-b border-base-300 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-base-200"
           @click="selectVenue(venue)"
         >
           <div class="font-medium">{{ venue.Name }}</div>
@@ -321,7 +319,9 @@ watch(
 
     <!-- No Results -->
     <div
-      v-if="showResults && searchResults.length === 0 && !isSearching && !selectedVenue && canSearch"
+      v-if="
+        showResults && searchResults.length === 0 && !isSearching && !selectedVenue && canSearch
+      "
       class="border-warning/50 bg-warning/10 rounded-lg border p-4"
     >
       <p class="mb-3 text-sm">
@@ -337,7 +337,10 @@ watch(
       <p v-if="selectedVenue.Address" class="mb-1">
         {{ selectedVenue.Address }}
       </p>
-      <div v-if="selectedVenue.Website || selectedVenue.InstagramHandle" class="flex flex-wrap gap-3">
+      <div
+        v-if="selectedVenue.Website || selectedVenue.InstagramHandle"
+        class="flex flex-wrap gap-3"
+      >
         <a
           v-if="selectedVenue.Website"
           :href="selectedVenue.Website"

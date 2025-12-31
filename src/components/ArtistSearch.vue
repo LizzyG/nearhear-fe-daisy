@@ -655,7 +655,12 @@ watch(
 
     <!-- Spotify Search - No Results -->
     <div
-      v-if="showSpotifyResults && spotifySearchResults.length === 0 && !isSearchingSpotify && !selectedArtist"
+      v-if="
+        showSpotifyResults &&
+        spotifySearchResults.length === 0 &&
+        !isSearchingSpotify &&
+        !selectedArtist
+      "
       class="border-warning/50 bg-warning/10 rounded-lg border p-4"
     >
       <p class="mb-3 text-sm">

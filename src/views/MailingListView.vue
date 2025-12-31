@@ -1,13 +1,39 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 
 import PageHeader from '@/components/layout/PageHeader.vue';
 import { apiFetch } from '@/utils/api';
+import { useCity } from '@/composables/useCity';
+import { usePostHog } from '@/composables/usePostHog';
 
 const email = ref('');
 const isSubmitting = ref(false);
 const submitError = ref<string | null>(null);
 const submitSuccess = ref(false);
+
+// Cities
+const { supportedCities, fetchSupportedCities, makeCityKey } = useCity();
+const selectedCityKeys = ref<string[]>([]);
+const posthog = usePostHog();
+const STORAGE_KEY_SUBSCRIBED = 'nearhear-mailing-subscribed';
+
+const ensureDefaultCities = () => {
+  if (selectedCityKeys.value.length > 0) return;
+  const portland = supportedCities.value.find((c) => c.City.toLowerCase() === 'portland');
+  if (portland) {
+    selectedCityKeys.value = [makeCityKey(portland)];
+  } else if (supportedCities.value.length > 0) {
+    const first = supportedCities.value[0];
+    if (first) {
+      selectedCityKeys.value = [makeCityKey(first)];
+    }
+  }
+};
+
+onMounted(async () => {
+  await fetchSupportedCities();
+  ensureDefaultCities();
+});
 
 // Email validation
 const isValidEmail = (value: string): boolean => {
@@ -27,14 +53,27 @@ const subscribe = async () => {
   submitSuccess.value = false;
 
   try {
+    // ensure cities
+    ensureDefaultCities();
+
     const params = new URLSearchParams({
       email: email.value,
       source: 'page',
     });
+
+    if (selectedCityKeys.value.length > 0) {
+      params.set('cities', selectedCityKeys.value.join(','));
+    }
+
     await apiFetch(`/media/mailingList/subscribe?${params.toString()}`);
 
     submitSuccess.value = true;
     email.value = '';
+
+    // mark as subscribed so modal doesn't show later
+    localStorage.setItem(STORAGE_KEY_SUBSCRIBED, 'true');
+
+    posthog.capture('mailing_list_subscribed', { source: 'page', cities: selectedCityKeys.value });
   } catch (err) {
     console.error('Failed to subscribe:', err);
     submitError.value = err instanceof Error ? err.message : 'Failed to subscribe';
@@ -97,6 +136,35 @@ const resetForm = () => {
               class="input-primary text-center"
               autocomplete="email"
             />
+          </div>
+
+          <!-- City selection -->
+          <div v-if="supportedCities.length" class="text-left">
+            <p class="text-base-content/60 mb-2 text-sm">
+              Select the cities you want weekly updates for.
+            </p>
+            <p class="app-city-note">
+              <strong>Note:</strong> right now we're only doing weekly emails for Portland.
+            </p>
+
+            <div class="mb-2 mt-3 grid max-h-36 grid-cols-2 gap-2 overflow-auto">
+              <label
+                v-for="city in supportedCities"
+                :key="city.City + city.StateAbbrev"
+                class="app-checkbox-label"
+              >
+                <input
+                  v-model="selectedCityKeys"
+                  type="checkbox"
+                  :value="makeCityKey(city)"
+                  class="app-checkbox"
+                />
+                <span class="text-sm">{{ city.City }}, {{ city.StateAbbrev }}</span>
+              </label>
+            </div>
+            <p v-if="!selectedCityKeys.length" class="text-base-content/50 mt-1 text-sm">
+              We'll default to Portland if you don't pick any.
+            </p>
           </div>
 
           <!-- Error Message -->
