@@ -34,10 +34,10 @@ function UpdateNowPlaying(data: unknown) {
 
 function handleAuthData(data: { token?: string; userID?: string }) {
   console.log('received auth data, setting cookies');
-  var d = new Date();
+  const d = new Date();
   const exdays = 365;
   d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
-  var expires = 'expires=' + d.toUTCString();
+  const expires = 'expires=' + d.toUTCString();
 
   // Check if the token is not null or empty, then set the cookie
   if (data.token && data.token.trim() !== '') {

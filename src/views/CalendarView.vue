@@ -10,111 +10,19 @@ import { resolveApiPath } from '@/config/api';
 import { useAuth } from '@/composables/useAuth';
 import { apiFetch } from '@/utils/api';
 
+import type {
+  AgeRange,
+  BandcampAlbum,
+  CalendarFullShow,
+  EventArtistInfo,
+  EventsFilter,
+  GetEventsRequest,
+  GetFiltersRequest,
+  SupportedCity,
+} from '@/types/event';
+
 const route = useRoute();
 const { isLoggedIn, loginWithSpotify, userId } = useAuth();
-interface SupportedCity {
-  City: string;
-  State: string;
-  StateAbbrev: string;
-  CountryAbbrev: string;
-  TzName: string;
-}
-
-type AgeRange = 0 | 1 | 2; // Over21, Over18, AllAges
-
-interface City {
-  // Add city fields if needed
-  [key: string]: unknown;
-}
-
-interface Venue {
-  Name: string;
-  GoogleName: string;
-  Status: string;
-  StreetNumber: string;
-  Street: string;
-  CityStr: string;
-  Zip: string;
-  ZipSuffix: string;
-  State: string;
-  Address: string;
-  Neighborhood: string;
-  Latitude: number;
-  Longitude: number;
-  GoogleId: string;
-  Website: string;
-  InstagramHandle: string;
-  MapsUrl: string;
-  City: City;
-}
-
-interface BandcampTrack {
-  ID: number;
-  Slug: string;
-  Name: string;
-}
-
-interface BandcampAlbum {
-  name?: string;
-  slug?: string;
-  id?: number;
-  release_date?: string;
-  tracks?: BandcampTrack[];
-  // Support both camelCase and snake_case for backward compatibility
-  Name?: string;
-  Slug?: string;
-  ID?: number;
-  Tracks?: BandcampTrack[];
-}
-
-interface BandcampData {
-  artist_name?: string;
-  albums?: BandcampAlbum[] | null;
-  // Support both camelCase and snake_case for backward compatibility
-  ArtistName?: string;
-  Albums?: BandcampAlbum[] | null;
-}
-
-interface ArtistMatchInfo {
-  [key: string]: unknown;
-}
-
-interface ArtistInfo {
-  ArtistId: number;
-  ArtistName: string;
-  SpotifyArtistId: string;
-  TopTrackIds: string[];
-  PreviewUrls: string[];
-  Popularity: number;
-  Genres: string[];
-  NumMatches: number;
-  PossibleMatches: ArtistMatchInfo[];
-  Aliases: string[];
-  InstagramHandle: string;
-  BandcampArtistSlug: string;
-  BandcampData: BandcampData;
-}
-
-interface Festival {
-  Id: number;
-  Name: string;
-  Website: string;
-  StartDate: string;
-  EndDate: string;
-}
-
-interface FullShow {
-  Date: string;
-  PriceLow: number;
-  PriceHigh: number;
-  AgeRange: AgeRange;
-  Venue: Venue;
-  Urls: string[];
-  ImgUrl: string;
-  Artists: ArtistInfo[];
-  Festival: Festival;
-  Status: string;
-}
 
 const supportedCities = ref<SupportedCity[]>([]);
 const STORAGE_KEY = 'nearhear-selected-city';
@@ -255,32 +163,6 @@ const toZonedISOString = (isoDate: string, timeZone: string) => {
   return zonedTime.toISOString();
 };
 
-interface EventsFilter {
-  City: SupportedCity;
-  StartDate: string;
-  EndDate: string;
-  SpotifyGenres: string[];
-  BroadGenres: string[];
-  Venues: string[];
-  Festivals: Festival[];
-  TheseFestivals: boolean;
-  MinShows: number;
-  TotalVenues: number;
-  FilterMode: string;
-}
-
-interface GetFiltersRequest {
-  startDate: string;
-  endDate: string;
-  city: SupportedCity;
-  minShows: number;
-}
-
-interface GetEventsRequest {
-  Filter: EventsFilter;
-  ResultCnt: number;
-  Page: number;
-}
 
 const formattedStartDate = computed(() => formatDate(startDate.value));
 const formattedEndDate = computed(() => formatDate(endDate.value));
@@ -304,7 +186,7 @@ const calendarRangeValue = computed(() => {
   return '';
 });
 
-const shows = ref<FullShow[]>([]);
+const shows = ref<CalendarFullShow[]>([]);
 const isLoadingEvents = ref(false);
 const eventsError = ref<string | null>(null);
 let eventsRequestId = 0;
@@ -349,9 +231,10 @@ const venueSearchQuery = ref('');
 const genreSearchQuery = ref('');
 
 const ageRangeStrings: Record<AgeRange, string> = {
-  0: 'Unknown',
+  0: 'All Ages',
   1: '18+',
   2: '21+',
+  3: 'Unknown',
 };
 
 const formatPrice = (low: number, high: number) => {
@@ -364,7 +247,7 @@ const formatPrice = (low: number, high: number) => {
   return `$${low.toFixed(2)} - $${high.toFixed(2)}`;
 };
 
-const hasPrice = (show: FullShow) => {
+const hasPrice = (show: CalendarFullShow) => {
   return (show.PriceLow && show.PriceLow > 0) || (show.PriceHigh && show.PriceHigh > 0);
 };
 
@@ -409,7 +292,7 @@ const formatShowDate = (dateString: string, timeZone?: string) => {
   }
 };
 
-const hasSpotifyTracks = (artist: ArtistInfo) => {
+const hasSpotifyTracks = (artist: EventArtistInfo) => {
   return artist.SpotifyArtistId && artist.TopTrackIds && artist.TopTrackIds.length > 0;
 };
 
@@ -421,7 +304,7 @@ const getAlbumId = (album: BandcampAlbum): number | undefined => {
 };
 
 // Check if artist has valid album data for embedding
-const hasBandcampAlbums = (artist: ArtistInfo) => {
+const hasBandcampAlbums = (artist: EventArtistInfo) => {
   if (!artist.BandcampData) {
     return false;
   }
@@ -434,7 +317,7 @@ const hasBandcampAlbums = (artist: ArtistInfo) => {
 };
 
 // Get the first valid album ID for embedding (non-zero ID)
-const getFirstAlbumId = (artist: ArtistInfo): number | undefined => {
+const getFirstAlbumId = (artist: EventArtistInfo): number | undefined => {
   if (!artist.BandcampData) {
     return undefined;
   }
@@ -453,7 +336,7 @@ const getFirstAlbumId = (artist: ArtistInfo): number | undefined => {
 };
 
 // Get Bandcamp artist URL from slug (e.g., "artistname.bandcamp.com")
-const getBandcampArtistUrl = (artist: ArtistInfo): string | undefined => {
+const getBandcampArtistUrl = (artist: EventArtistInfo): string | undefined => {
   if (artist.BandcampArtistSlug && artist.BandcampArtistSlug.trim()) {
     return `https://${artist.BandcampArtistSlug}.bandcamp.com`;
   }
@@ -461,7 +344,7 @@ const getBandcampArtistUrl = (artist: ArtistInfo): string | undefined => {
 };
 
 // Generate Google Calendar URL for an event
-const getGoogleCalendarUrl = (show: FullShow): string => {
+const getGoogleCalendarUrl = (show: CalendarFullShow): string => {
   const artistNames = show.Artists?.map((a) => a.ArtistName).join(', ') || 'Live Music';
   const title = `${artistNames} at ${show.Venue?.Name || 'Venue'}`;
 
@@ -501,7 +384,7 @@ const getGoogleCalendarUrl = (show: FullShow): string => {
 };
 
 // Download .ics file for an event
-const downloadIcsFile = (show: FullShow): void => {
+const downloadIcsFile = (show: CalendarFullShow): void => {
   const artistNames = show.Artists?.map((a) => a.ArtistName).join(', ') || 'Live Music';
   const title = `${artistNames} at ${show.Venue?.Name || 'Venue'}`;
 
@@ -684,9 +567,9 @@ const fetchEvents = async () => {
     console.log('[fetchEvents] Response text length:', responseText.length);
     console.log('[fetchEvents] Response text preview:', responseText.substring(0, 500));
 
-    let data: FullShow[];
+    let data: CalendarFullShow[];
     try {
-      data = JSON.parse(responseText) as FullShow[];
+      data = JSON.parse(responseText) as CalendarFullShow[];
       console.log('[fetchEvents] Parsed response data:', {
         isArray: Array.isArray(data),
         length: Array.isArray(data) ? data.length : 'not an array',
