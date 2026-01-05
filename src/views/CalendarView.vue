@@ -870,9 +870,8 @@ const handleRangeChange = (event: Event) => {
   startDate.value = parsedStart;
   endDate.value = parsedEnd;
 
-  // If both dates are set, close calendar and fetch events
+  // If both dates are set, fetch events (user closes manually)
   if (parsedStart && parsedEnd) {
-    closeCalendar();
     void fetchEvents();
     void fetchFilters();
   }
@@ -1309,7 +1308,6 @@ defineExpose({
                 :value="formattedDateRange"
                 placeholder="Select date range"
                 @click="openCalendar"
-                @focus="openCalendar"
               />
               <svg
                 xmlns="http://www.w3.org/2000/svg"
