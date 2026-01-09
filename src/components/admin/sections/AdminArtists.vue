@@ -84,3 +84,5 @@ const artists = ref<{ id: string; name: string; genres: string[]; eventCount: nu
     </div>
   </div>
 </template>
+
+

@@ -3,6 +3,42 @@
 @tailwind utilities;
 
 /* ============================================
+   Hot Pink Dark Theme
+   ============================================ */
+[data-theme="hotpink"] {
+  color-scheme: dark;
+  
+  --color-base-100: #1a1a1a;
+  --color-base-200: #141414;
+  --color-base-300: #0d0d0d;
+  --color-base-content: #e5e5e5;
+  
+  --color-primary: #ff1493;
+  --color-primary-content: #ffffff;
+  
+  --color-secondary: #ff69b4;
+  --color-secondary-content: #1a1a1a;
+  
+  --color-accent: #ff85c1;
+  --color-accent-content: #1a1a1a;
+  
+  --color-neutral: #2a2a2a;
+  --color-neutral-content: #d4d4d4;
+  
+  --color-info: #38bdf8;
+  --color-info-content: #1a1a1a;
+  
+  --color-success: #4ade80;
+  --color-success-content: #1a1a1a;
+  
+  --color-warning: #fbbf24;
+  --color-warning-content: #1a1a1a;
+  
+  --color-error: #f87171;
+  --color-error-content: #1a1a1a;
+}
+
+/* ============================================
    Third-party brand colors
    ============================================ */
 :root {

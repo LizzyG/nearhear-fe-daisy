@@ -27,8 +27,33 @@ const config: Config = {
   plugins: [daisyui],
   daisyui: {
     logs: false,
-    darkTheme: 'elzie',
+    darkTheme: 'hotpink',
     themes: [
+      {
+        hotpink: {
+          'color-scheme': 'dark',
+          'base-100': '#1a1a1a',
+          'base-200': '#141414',
+          'base-300': '#0d0d0d',
+          'base-content': '#e5e5e5',
+          primary: '#ff1493',
+          'primary-content': '#ffffff',
+          secondary: '#ff69b4',
+          'secondary-content': '#1a1a1a',
+          accent: '#ff85c1',
+          'accent-content': '#1a1a1a',
+          neutral: '#2a2a2a',
+          'neutral-content': '#d4d4d4',
+          info: '#38bdf8',
+          'info-content': '#1a1a1a',
+          success: '#4ade80',
+          'success-content': '#1a1a1a',
+          warning: '#fbbf24',
+          'warning-content': '#1a1a1a',
+          error: '#f87171',
+          'error-content': '#1a1a1a',
+        },
+      },
       'synthwave',
       {
         nearhear: {

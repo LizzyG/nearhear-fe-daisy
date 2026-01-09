@@ -16,7 +16,7 @@ import AdminErrors from '@/components/admin/sections/AdminErrors.vue';
 import AdminStats from '@/components/admin/sections/AdminStats.vue';
 
 const router = useRouter();
-const { isAdminLoggedIn, logout } = useAdminAuth();
+const { isAdminLoggedIn, isLoading, logout } = useAdminAuth();
 
 type AdminSection = 'lookups' | 'artists' | 'events' | 'users' | 'venues' | 'errors' | 'stats';
 
@@ -29,7 +29,7 @@ const sections: { id: AdminSection; label: string; icon: string }[] = [
   { id: 'users', label: 'Manage Users', icon: 'users' },
   { id: 'venues', label: 'Manage Venues', icon: 'map-pin' },
   { id: 'errors', label: 'Errors', icon: 'alert' },
-  { id: 'stats', label: 'Stats', icon: 'chart' },
+  { id: 'stats', label: 'Scrapers', icon: 'chart' },
 ];
 
 const currentSectionComponent = computed(() => {
@@ -61,8 +61,16 @@ const handleLogout = () => {
 
 <template>
   <section>
+    <!-- Show loading while checking session -->
+    <template v-if="isLoading">
+      <PageHeader title="Admin" />
+      <div class="flex items-center justify-center py-12">
+        <span class="loading loading-spinner loading-lg"></span>
+      </div>
+    </template>
+
     <!-- Show login if not authenticated -->
-    <template v-if="!isAdminLoggedIn">
+    <template v-else-if="!isAdminLoggedIn">
       <PageHeader title="Admin" />
       <AdminLogin @success="handleLoginSuccess" @cancel="handleLoginCancel" />
     </template>
@@ -240,3 +248,5 @@ const handleLogout = () => {
     </template>
   </section>
 </template>
+
+

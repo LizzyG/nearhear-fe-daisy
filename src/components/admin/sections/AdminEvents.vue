@@ -99,3 +99,5 @@ const events = ref<{ id: string; name: string; date: string; venue: string; stat
     </div>
   </div>
 </template>
+
+

@@ -2,41 +2,37 @@ import { computed, ref } from 'vue';
 
 import { apiFetch } from '@/utils/api';
 
-// Cookie name for admin auth token
-const ADMIN_AUTH_COOKIE = 'nearhear_admin_token';
-
 // Shared reactive state (singleton pattern)
 const adminToken = ref<string | undefined>(undefined);
 const isInitialized = ref(false);
-
-/**
- * Get a cookie value by name
- */
-const getCookie = (name: string): string | undefined => {
-  const value = document.cookie
-    .split('; ')
-    .find((row) => row.startsWith(`${name}=`))
-    ?.split('=')[1];
-  return value || undefined;
-};
+const isCheckingSession = ref(false);
 
 /**
  * Composable for managing admin authentication
  */
 export const useAdminAuth = () => {
-  // Initialize auth state from cookies (only once)
-  const initAuth = () => {
-    if (isInitialized.value) return;
+  // Initialize auth state by checking session with server (only once)
+  const initAuth = async () => {
+    if (isInitialized.value || isCheckingSession.value) return;
+    isCheckingSession.value = true;
 
-    const token = getCookie(ADMIN_AUTH_COOKIE);
-    if (token) {
-      adminToken.value = token;
+    try {
+      // Check if we have a valid session cookie (HttpOnly, so we can't read it directly)
+      await apiFetch<void>('/admin/checkSession', { method: 'GET' });
+      // If we get here without error, the session is valid
+      adminToken.value = 'session-valid';
+    } catch {
+      // Session invalid or expired
+      adminToken.value = undefined;
+    } finally {
+      isInitialized.value = true;
+      isCheckingSession.value = false;
     }
-    isInitialized.value = true;
   };
 
   // Computed properties for auth state
   const isAdminLoggedIn = computed(() => !!adminToken.value);
+  const isLoading = computed(() => isCheckingSession.value);
 
   const token = computed(() => adminToken.value);
 
@@ -50,7 +46,6 @@ export const useAdminAuth = () => {
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       const payload = { username, password };
-      console.debug('Admin login payload:', payload);
 
       // Use shared apiFetch helper which sets headers and includes credentials
       await apiFetch<void>('/admin/login', {
@@ -58,15 +53,9 @@ export const useAdminAuth = () => {
         body: JSON.stringify(payload),
       });
 
-      // Server sets cookie via Set-Cookie header.
-      // Try to read it to update local state for UI.
-      const token = getCookie(ADMIN_AUTH_COOKIE);
-      if (token) {
-        adminToken.value = token;
-      } else {
-        // Cookie might be HttpOnly, mark as logged in anyway
-        adminToken.value = 'logged-in';
-      }
+      // Server sets HttpOnly cookie via Set-Cookie header
+      // Mark as logged in for UI state
+      adminToken.value = 'session-valid';
       return { success: true };
     } catch (err) {
       console.error('Admin login error:', err);
@@ -93,11 +82,15 @@ export const useAdminAuth = () => {
   };
 
   /**
-   * Refresh auth state from cookies
+   * Refresh auth state by checking session with server
    */
-  const refreshAuthState = () => {
-    const storedToken = getCookie(ADMIN_AUTH_COOKIE);
-    adminToken.value = storedToken || undefined;
+  const refreshAuthState = async () => {
+    try {
+      await apiFetch<void>('/admin/checkSession', { method: 'GET' });
+      adminToken.value = 'session-valid';
+    } catch {
+      adminToken.value = undefined;
+    }
   };
 
   // Initialize on first use
@@ -106,6 +99,7 @@ export const useAdminAuth = () => {
   return {
     // State
     isAdminLoggedIn,
+    isLoading,
     token,
 
     // Actions

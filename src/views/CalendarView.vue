@@ -1713,7 +1713,7 @@ defineExpose({
           <div class="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div class="flex-1">
               <h4 class="text-base font-semibold text-base-content">{{ show.Venue.Name }}</h4>
-              <div class="text-base-content/70 mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              <div class="text-base-content/70 mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                 <span>{{ formatShowDate(show.Date) }}</span>
                 <span v-if="hasPrice(show)">{{ formatPrice(show.PriceLow, show.PriceHigh) }}</span>
                 <span v-if="show.AgeRange !== undefined && show.AgeRange !== 0">{{
@@ -1722,6 +1722,29 @@ defineExpose({
                 <span v-if="show.Venue.Address" class="max-w-xs truncate">{{
                   show.Venue.Address
                 }}</span>
+                <a
+                  v-if="show.Urls && show.Urls.length > 0"
+                  :href="show.Urls[0]"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1 font-medium text-primary hover:text-secondary"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="h-4 w-4"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+                    />
+                  </svg>
+                  Tickets
+                </a>
               </div>
             </div>
             <!-- Add to Calendar dropdown -->
