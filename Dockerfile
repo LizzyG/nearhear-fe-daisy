@@ -3,8 +3,10 @@ FROM node:alpine3.22 AS builder
 
 WORKDIR /app
 
-# Accept build argument for API environment
+# Accept build arguments for environment variables
 ARG VITE_API_ENV=prod
+ARG VITE_POSTHOG_KEY="phc_bhHb3fJjR52we1wcI10jCRwTrhr6Iem6nfn5DfM9Iji"
+ARG VITE_POSTHOG_HOST="https://us.i.posthog.com"
 
 # Copy package files
 COPY package*.json ./
@@ -15,8 +17,11 @@ RUN npm ci --ignore-scripts
 # Copy source code
 COPY . .
 
-# Build the application with environment variable
-RUN VITE_API_ENV=${VITE_API_ENV} npm run build
+# Build the application with environment variables
+RUN VITE_API_ENV=${VITE_API_ENV} \
+    VITE_POSTHOG_KEY=${VITE_POSTHOG_KEY} \
+    VITE_POSTHOG_HOST=${VITE_POSTHOG_HOST} \
+    npm run build
 
 # Production stage
 FROM node:alpine3.22
