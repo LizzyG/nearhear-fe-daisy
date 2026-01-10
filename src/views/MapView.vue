@@ -123,9 +123,9 @@ const initMap = () => {
   if (!mapContainer.value || map) return;
 
   const cityName = selectedCity.value?.City || 'Portland';
-  const coords = cityCoordinates[cityName] || cityCoordinates['Portland'];
+  const coords = cityCoordinates[cityName] ?? cityCoordinates['Portland'] ?? [45.5008089, -122.6545459];
 
-  map = L.map(mapContainer.value).setView(coords, 13);
+  map = L.map(mapContainer.value).setView(coords as [number, number], 13);
 
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
@@ -165,8 +165,8 @@ const centerMapOnCity = () => {
   if (!map) return;
 
   const cityName = selectedCity.value?.City || 'Portland';
-  const coords = cityCoordinates[cityName] || cityCoordinates['Portland'];
-  map.setView(coords, 13);
+  const coords = cityCoordinates[cityName] ?? cityCoordinates['Portland'] ?? [45.5008089, -122.6545459];
+  map.setView(coords as [number, number], 13);
 };
 
 // Fetch supported cities

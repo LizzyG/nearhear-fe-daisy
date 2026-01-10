@@ -23,7 +23,7 @@ const makeCityKey = (city: City): string => {
 
 const parseCityKey = (key: string): { city: string; state: string } | null => {
   const parts = key.split('-');
-  if (parts.length !== 2) return null;
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
   return { city: parts[0], state: parts[1] };
 };
 

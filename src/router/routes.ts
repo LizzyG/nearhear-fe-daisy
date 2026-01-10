@@ -44,7 +44,7 @@ export const appRoutes: RouteRecordRaw[] = [
     redirect: { name: 'calendar' },
   },
   // Main navigation routes
-  ...mainNavItems.map((item) => {
+  ...mainNavItems.map((item): RouteRecordRaw => {
     const component = routeComponentMap[item.name];
 
     if (!component) {
@@ -62,7 +62,7 @@ export const appRoutes: RouteRecordRaw[] = [
     };
   }),
   // Add menu routes
-  ...addMenuItems.map((item) => {
+  ...addMenuItems.map((item): RouteRecordRaw => {
     const component = routeComponentMap[item.name];
 
     if (!component) {
@@ -82,31 +82,31 @@ export const appRoutes: RouteRecordRaw[] = [
   {
     path: '/profile',
     name: 'profile',
-    component: routeComponentMap.profile,
+    component: routeComponentMap.profile!,
     meta: { label: 'Profile / Account' },
   },
   {
     path: '/faq',
     name: 'faq',
-    component: routeComponentMap.faq,
+    component: routeComponentMap.faq!,
     meta: { label: 'FAQ' },
   },
   {
     path: '/about',
     name: 'about',
-    component: routeComponentMap.about,
+    component: routeComponentMap.about!,
     meta: { label: 'About' },
   },
   {
     path: '/mailing-list',
     name: 'mailing-list',
-    component: routeComponentMap['mailing-list'],
+    component: routeComponentMap['mailing-list']!,
     meta: { label: 'Mailing List' },
   },
   {
     path: '/settings',
     name: 'settings',
-    component: routeComponentMap.settings,
+    component: routeComponentMap.settings!,
     meta: { label: 'Settings' },
   },
   {

@@ -127,7 +127,7 @@ const searchVenue = async () => {
     showResults.value = true;
 
     // If exactly one result, auto-select it
-    if (searchResults.value.length === 1) {
+    if (searchResults.value.length === 1 && searchResults.value[0]) {
       selectVenue(searchResults.value[0]);
     }
   } catch (err) {

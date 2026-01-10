@@ -43,12 +43,6 @@ const neverRunScrapers = computed(() =>
   scrapers.value.filter(s => !s.lastRunAt && !s.isPaused)
 );
 
-const formatDate = (dateStr?: string) => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-};
-
 const formatDateOnly = (dateStr?: string) => {
   if (!dateStr) return '-';
   return dateStr.split('T')[0];

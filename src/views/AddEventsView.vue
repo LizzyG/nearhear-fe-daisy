@@ -33,7 +33,11 @@ const eventTime = ref('');
 const formattedDate = computed(() => {
   if (!eventDate.value) return '';
   try {
-    const [year, month, day] = eventDate.value.split('-').map(Number);
+    const parts = eventDate.value.split('-').map(Number);
+    const year = parts[0];
+    const month = parts[1];
+    const day = parts[2];
+    if (year === undefined || month === undefined || day === undefined) return eventDate.value;
     const date = new Date(year, month - 1, day);
     return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
   } catch {
@@ -49,7 +53,7 @@ const handleDateChange = (event: Event) => {
   if (!target?.value) return;
 
   // Validate it's not in the past
-  if (target.value < todayDate.value) {
+  if (todayDate.value && target.value < todayDate.value) {
     return;
   }
 
@@ -259,7 +263,7 @@ const lookupOrCreateArtist = async (artist: ArtistInfo): Promise<EventArtistRef>
     );
 
     // If we found a matching artist, use it
-    if (existingArtists && existingArtists.length > 0) {
+    if (existingArtists && existingArtists.length > 0 && existingArtists[0]) {
       const existing = existingArtists[0];
       return {
         artist_id: existing.ArtistId!,
