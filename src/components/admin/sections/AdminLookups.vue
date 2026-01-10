@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { apiFetch } from '@/utils/api';
-import LazyEmbed from '@/components/LazyEmbed.vue';
+import SpotifyPreviewPlayer from '@/components/SpotifyPreviewPlayer.vue';
 import type {
   LookupArtistEntry,
   GetLookupArtistsResponse,
@@ -45,6 +45,7 @@ const updateForms = ref<
       artistName: string;
       spotifyId: string;
       bandcampSlug: string;
+      instagramHandle: string;
     }
   >
 >({});
@@ -303,10 +304,6 @@ const formatDate = (dateStr: string) => {
   }
 };
 
-const getSpotifyEmbedUrl = (spotifyId: string) => {
-  if (!spotifyId) return '';
-  return `https://open.spotify.com/embed/artist/${spotifyId}?utm_source=generator&theme=0&compact=true`;
-};
 
 // Get color class based on popularity score
 const getPopularityColor = (popularity: number): string => {
@@ -702,13 +699,13 @@ onMounted(() => {
 
             <!-- Manual Entry Form -->
             <div class="mt-3 pt-3 border-t border-base-300">
-              <div class="grid gap-3 grid-cols-4">
+              <div v-if="updateForms[artist.eventArtistId]" class="grid gap-3 grid-cols-4">
                 <div class="form-control">
                   <label class="label py-0.5">
                     <span class="label-text text-xs">Artist Name</span>
                   </label>
                   <input
-                    v-model="updateForms[artist.eventArtistId].artistName"
+                    v-model="updateForms[artist.eventArtistId]!.artistName"
                     type="text"
                     placeholder="Artist name"
                     class="input-primary-sm"
@@ -719,7 +716,7 @@ onMounted(() => {
                     <span class="label-text text-xs">Spotify ID/URL</span>
                   </label>
                   <input
-                    v-model="updateForms[artist.eventArtistId].spotifyId"
+                    v-model="updateForms[artist.eventArtistId]!.spotifyId"
                     type="text"
                     placeholder="Spotify ID or URL"
                     class="input-primary-sm"
@@ -730,7 +727,7 @@ onMounted(() => {
                     <span class="label-text text-xs">Bandcamp</span>
                   </label>
                   <input
-                    v-model="updateForms[artist.eventArtistId].bandcampSlug"
+                    v-model="updateForms[artist.eventArtistId]!.bandcampSlug"
                     type="text"
                     placeholder="artistname.bandcamp.com"
                     class="input-primary-sm"
@@ -741,7 +738,7 @@ onMounted(() => {
                     <span class="label-text text-xs">Instagram</span>
                   </label>
                   <input
-                    v-model="updateForms[artist.eventArtistId].instagramHandle"
+                    v-model="updateForms[artist.eventArtistId]!.instagramHandle"
                     type="text"
                     placeholder="@handle or URL"
                     class="input-primary-sm"
@@ -749,13 +746,13 @@ onMounted(() => {
                 </div>
               </div>
 
-              <!-- Preview Spotify Embed if ID is set -->
+              <!-- Preview Spotify Player if ID is set -->
               <div v-if="updateForms[artist.eventArtistId]?.spotifyId" class="mt-2">
-                <LazyEmbed
-                  :src="getSpotifyEmbedUrl(updateForms[artist.eventArtistId].spotifyId)"
+                <SpotifyPreviewPlayer
+                  :artist-name="updateForms[artist.eventArtistId]?.artistName || artist.artistName"
+                  :spotify-artist-id="updateForms[artist.eventArtistId]?.spotifyId || ''"
+                  :preview-urls="[]"
                   :width="280"
-                  :height="80"
-                  class="rounded-md"
                 />
               </div>
             </div>

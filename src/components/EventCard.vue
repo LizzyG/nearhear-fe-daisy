@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import LazyEmbed from '@/components/LazyEmbed.vue';
+import SpotifyPreviewPlayer from '@/components/SpotifyPreviewPlayer.vue';
 
 // Normalized event type that works for both calendar and liked events
 export interface EventArtist {
@@ -297,13 +298,13 @@ const downloadIcsFile = (): void => {
           </div>
         </div>
 
-        <!-- Spotify Embed -->
+        <!-- Spotify Preview Player -->
         <div v-if="hasSpotifyTracks(artist)">
-          <LazyEmbed
-            :src="`https://open.spotify.com/embed/artist/${artist.spotifyArtistId}?utm_source=generator&theme=0&compact=true`"
+          <SpotifyPreviewPlayer
+            :artist-name="artist.name"
+            :spotify-artist-id="artist.spotifyArtistId || ''"
+            :preview-urls="artist.previewUrls || []"
             :width="280"
-            :height="80"
-            class="rounded-md"
           />
         </div>
 

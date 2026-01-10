@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import LazyEmbed from '@/components/LazyEmbed.vue';
+import SpotifyPreviewPlayer from '@/components/SpotifyPreviewPlayer.vue';
 import type { ArtistInfo } from '@/types/artist';
 import { apiFetch } from '@/utils/api';
 
@@ -12,7 +13,8 @@ const hasBandcampAlbums = (artist: ArtistInfo): boolean => {
 // Get first album ID for embed
 const getFirstBandcampAlbumId = (artist: ArtistInfo): number | null => {
   if (artist.BandcampData?.albums && artist.BandcampData.albums.length > 0) {
-    return artist.BandcampData.albums[0].album_id;
+    const firstAlbum = artist.BandcampData.albums[0];
+    return firstAlbum?.album_id ?? null;
   }
   return null;
 };
@@ -22,7 +24,7 @@ const getInstagramHandle = (artist: ArtistInfo): string | null => {
   if (artist.InstagramHandle) return artist.InstagramHandle;
   if (artist.InstagramURL) {
     const match = artist.InstagramURL.match(/instagram\.com\/([a-zA-Z0-9_.]+)/i);
-    return match ? match[1] : null;
+    return match?.[1] ?? null;
   }
   return null;
 };
@@ -32,7 +34,7 @@ const getSpotifyArtistId = (artist: ArtistInfo): string | null => {
   if (artist.SpotifyArtistId) return artist.SpotifyArtistId;
   if (artist.SpotifyURL) {
     const match = artist.SpotifyURL.match(/artist\/([a-zA-Z0-9]+)/i);
-    return match ? match[1] : null;
+    return match?.[1] ?? null;
   }
   return null;
 };
@@ -239,7 +241,7 @@ const searchArtist = async () => {
     showResults.value = true;
 
     // If only one result, auto-select it (from database = true)
-    if (results && results.length === 1) {
+    if (results && results.length === 1 && results[0]) {
       selectArtist(results[0], true);
     }
   } catch (err) {
@@ -269,7 +271,7 @@ const searchSpotify = async () => {
     showResults.value = false; // Hide the original results
 
     // If only one result, auto-select it (from Spotify = false)
-    if (results && results.length === 1) {
+    if (results && results.length === 1 && results[0]) {
       selectArtist(results[0], false);
     }
   } catch (err) {
@@ -781,11 +783,11 @@ watch(
               {{ selectedArtist.SpotifyURL }}
             </a>
           </div>
-          <LazyEmbed
-            :src="`https://open.spotify.com/embed/artist/${getSpotifyArtistId(selectedArtist)}?utm_source=generator&theme=0&compact=true`"
+          <SpotifyPreviewPlayer
+            :artist-name="selectedArtist.ArtistName"
+            :spotify-artist-id="getSpotifyArtistId(selectedArtist) || ''"
+            :preview-urls="[]"
             :width="280"
-            :height="80"
-            class="rounded-md"
           />
         </div>
 

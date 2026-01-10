@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 
 import FilterChip from '@/components/FilterChip.vue';
 import LazyEmbed from '@/components/LazyEmbed.vue';
+import SpotifyPreviewPlayer from '@/components/SpotifyPreviewPlayer.vue';
 import PageHeader from '../components/layout/PageHeader.vue';
 
 import { resolveApiPath } from '@/config/api';
@@ -761,22 +762,6 @@ const resetDateRange = () => {
   endDate.value = formatIsoDate(nextDay);
 };
 
-const handleCityReset = () => {
-  selectedCityKey.value = null;
-  localStorage.removeItem(STORAGE_KEY);
-  resetDateRange();
-  isCalendarOpen.value = false;
-  eventsRequestId += 1;
-  isLoadingEvents.value = false;
-  shows.value = [];
-  eventsError.value = null;
-  // Clear filters
-  selectedVenues.value = [];
-  selectedSpotifyGenres.value = [];
-  selectedBroadGenres.value = [];
-  filters.value = null;
-};
-
 type CalendarRangeElement = HTMLElement & {
   value?: string;
 };
@@ -1002,37 +987,6 @@ const isPendingVenueSelected = (venue: string) => pendingVenues.value.includes(v
 const isPendingSpotifyGenreSelected = (genre: string) => pendingSpotifyGenres.value.includes(genre);
 const isPendingBroadGenreSelected = (genre: string) => pendingBroadGenres.value.includes(genre);
 
-// Original toggle functions (kept for active filter chips)
-const toggleVenue = (venue: string) => {
-  const index = selectedVenues.value.indexOf(venue);
-  if (index > -1) {
-    selectedVenues.value.splice(index, 1);
-  } else {
-    selectedVenues.value.push(venue);
-  }
-  void fetchEvents();
-};
-
-const toggleSpotifyGenre = (genre: string) => {
-  const index = selectedSpotifyGenres.value.indexOf(genre);
-  if (index > -1) {
-    selectedSpotifyGenres.value.splice(index, 1);
-  } else {
-    selectedSpotifyGenres.value.push(genre);
-  }
-  void fetchEvents();
-};
-
-const toggleBroadGenre = (genre: string) => {
-  const index = selectedBroadGenres.value.indexOf(genre);
-  if (index > -1) {
-    selectedBroadGenres.value.splice(index, 1);
-  } else {
-    selectedBroadGenres.value.push(genre);
-  }
-  void fetchEvents();
-};
-
 // Remove filter functions
 const removeVenue = (venue: string) => {
   const index = selectedVenues.value.indexOf(venue);
@@ -1057,11 +1011,6 @@ const removeBroadGenre = (genre: string) => {
     void fetchEvents();
   }
 };
-
-// Check if a filter is selected
-const isVenueSelected = (venue: string) => selectedVenues.value.includes(venue);
-const isSpotifyGenreSelected = (genre: string) => selectedSpotifyGenres.value.includes(genre);
-const isBroadGenreSelected = (genre: string) => selectedBroadGenres.value.includes(genre);
 
 const handleCalendarKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
@@ -1846,13 +1795,13 @@ defineExpose({
                   </span>
                 </div>
               </div>
-              <!-- Embed directly below artist name -->
+              <!-- Spotify Preview Player directly below artist name -->
               <div v-if="hasSpotifyTracks(artist)">
-                <LazyEmbed
-                  :src="`https://open.spotify.com/embed/artist/${artist.SpotifyArtistId}?utm_source=generator&theme=0&compact=true`"
+                <SpotifyPreviewPlayer
+                  :artist-name="artist.ArtistName"
+                  :spotify-artist-id="artist.SpotifyArtistId"
+                  :preview-urls="artist.PreviewUrls"
                   :width="280"
-                  :height="80"
-                  class="rounded-md"
                 />
               </div>
               <div v-else-if="hasBandcampAlbums(artist)">
