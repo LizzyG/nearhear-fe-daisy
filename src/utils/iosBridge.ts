@@ -29,6 +29,19 @@ function LocationResponse(data: unknown) {
 }
 
 function UpdateNowPlaying(data: unknown) {
+  console.log('[iosBridge] UpdateNowPlaying called with data:', JSON.stringify(data, null, 2));
+  
+  if (!window.NowPlaying) {
+    console.error('[iosBridge] window.NowPlaying not registered - component may not be mounted');
+    return;
+  }
+  
+  if (!window.NowPlaying.UpdateNowPlaying) {
+    console.error('[iosBridge] window.NowPlaying.UpdateNowPlaying function not found');
+    return;
+  }
+  
+  console.log('[iosBridge] Forwarding to NowPlaying component...');
   window.NowPlaying.UpdateNowPlaying(data);
 }
 

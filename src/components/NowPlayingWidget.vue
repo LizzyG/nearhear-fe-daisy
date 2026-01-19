@@ -79,7 +79,12 @@ const formatShortDate = (dateString: string): string => {
 };
 
 const fetchArtistEvents = async () => {
+  console.log('[NowPlaying] fetchArtistEvents called');
+  console.log('[NowPlaying] nowPlayingData.value:', nowPlayingData.value);
+  console.log('[NowPlaying] selectedCity.value:', selectedCity.value);
+  
   if (!nowPlayingData.value || !selectedCity.value) {
+    console.log('[NowPlaying] Missing data - nowPlayingData:', !!nowPlayingData.value, 'selectedCity:', !!selectedCity.value);
     events.value = [];
     return;
   }
@@ -96,14 +101,17 @@ const fetchArtistEvents = async () => {
       PlaylistUri: nowPlayingData.value.playlistUri,
     };
 
+    console.log('[NowPlaying] Fetching events with payload:', JSON.stringify(payload, null, 2));
+    
     const result = await apiFetch<ArtistEvent[]>('/media/getArtistEvents', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
 
+    console.log('[NowPlaying] Events result:', result);
     events.value = result || [];
   } catch (error) {
-    console.error('Failed to fetch artist events:', error);
+    console.error('[NowPlaying] Failed to fetch artist events:', error);
     events.value = [];
   } finally {
     isLoadingEvents.value = false;
@@ -111,23 +119,51 @@ const fetchArtistEvents = async () => {
 };
 
 const UpdateNowPlaying = (data: NowPlayingData) => {
+  console.log('[NowPlaying] UpdateNowPlaying called with data:', JSON.stringify(data, null, 2));
+  
+  if (!data) {
+    console.warn('[NowPlaying] Received null/undefined data from iOS');
+    return;
+  }
+  
+  if (!data.artistName) {
+    console.warn('[NowPlaying] Data missing artistName:', data);
+  }
+  
   nowPlayingData.value = data;
+  console.log('[NowPlaying] nowPlayingData set, hasNowPlaying:', hasNowPlaying.value);
   void fetchArtistEvents();
 };
 
 const requestNowPlaying = () => {
+  console.log('[NowPlaying] requestNowPlaying called');
+  console.log('[NowPlaying] window.webkit exists:', !!window.webkit);
+  console.log('[NowPlaying] window.webkit?.messageHandlers exists:', !!window.webkit?.messageHandlers);
+  console.log('[NowPlaying] window.webkit?.messageHandlers?.bridge exists:', !!window.webkit?.messageHandlers?.bridge);
+  
   if (window.webkit?.messageHandlers?.bridge) {
+    console.log('[NowPlaying] Sending getNowPlaying request to iOS bridge...');
     window.webkit.messageHandlers.bridge.postMessage({ request: 'getNowPlaying' });
+    console.log('[NowPlaying] Request sent to iOS');
+  } else {
+    console.warn('[NowPlaying] iOS bridge not available - cannot request now playing data');
   }
 };
 
 // Lifecycle
 onBeforeMount(() => {
+  console.log('[NowPlaying] Component mounting...');
+  console.log('[NowPlaying] isApp:', isApp.value);
+  
   // Register the bridge interface for iOS communication
   window.NowPlaying = {
     components: undefined,
-    UpdateNowPlaying: (data: NowPlayingData) => UpdateNowPlaying(data),
+    UpdateNowPlaying: (data: NowPlayingData) => {
+      console.log('[NowPlaying] iOS called UpdateNowPlaying callback');
+      UpdateNowPlaying(data);
+    },
   };
+  console.log('[NowPlaying] Registered window.NowPlaying interface');
 
   // Request current now playing data from iOS
   requestNowPlaying();
