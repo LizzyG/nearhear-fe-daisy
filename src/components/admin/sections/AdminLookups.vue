@@ -92,8 +92,9 @@ const fetchLookupArtists = async () => {
         };
       }
       // Initialize spotify search query with artist name
-      if (!spotifySearchQuery.value[artist.eventArtistId]) {
-        spotifySearchQuery.value[artist.eventArtistId] = artist.artistName;
+      const key = String(artist.eventArtistId);
+      if (!spotifySearchQuery.value[key]) {
+        spotifySearchQuery.value[key] = artist.artistName;
       }
     });
   } catch (err) {
@@ -117,31 +118,51 @@ const toggleRow = (eventArtistId: number) => {
   }
 };
 
-const searchSpotify = async (eventArtistId: number) => {
-  const query = spotifySearchQuery.value[eventArtistId];
+const updateSearchQuery = (searchKey: string, event: Event) => {
+  const target = event.target as HTMLInputElement;
+  spotifySearchQuery.value[searchKey] = target.value;
+};
+
+const searchSpotify = async (searchKey: string | number) => {
+  const key = String(searchKey);
+  const query = spotifySearchQuery.value[key];
   if (!query?.trim()) return;
 
-  spotifySearching.value[eventArtistId] = true;
+  spotifySearching.value[key] = true;
 
   try {
     const params = new URLSearchParams({ name: query.trim() });
     const results = await apiFetch<SpotifySearchResult[]>(`/media/searchSpotify?${params}`);
-    spotifyResults.value[eventArtistId] = results || [];
+    spotifyResults.value[key] = results || [];
   } catch (err) {
     console.error('Spotify search failed:', err);
   } finally {
-    spotifySearching.value[eventArtistId] = false;
+    spotifySearching.value[key] = false;
   }
 };
 
-const selectSpotifyResult = (eventArtistId: number, result: SpotifySearchResult) => {
-  const form = updateForms.value[eventArtistId];
-  if (form) {
-    form.artistName = result.ArtistName;
-    form.spotifyId = result.SpotifyArtistId || '';
+const selectSpotifyResult = (searchKey: string | number, result: SpotifySearchResult, isSplit: boolean = false, splitIndex?: number, eventArtistId?: number) => {
+  const key = String(searchKey);
+  
+  if (isSplit && eventArtistId !== undefined && splitIndex !== undefined) {
+    // Handle split artist selection
+    const artists = splitArtists.value[eventArtistId];
+    if (artists && artists[splitIndex]) {
+      artists[splitIndex].name = result.ArtistName;
+      artists[splitIndex].spotifyId = result.SpotifyArtistId || '';
+      splitArtists.value[eventArtistId] = [...artists];
+    }
+  } else {
+    // Handle normal mode selection
+    const form = updateForms.value[Number(searchKey)];
+    if (form) {
+      form.artistName = result.ArtistName;
+      form.spotifyId = result.SpotifyArtistId || '';
+    }
   }
+  
   // Clear search results after selection
-  spotifyResults.value[eventArtistId] = [];
+  spotifyResults.value[key] = [];
 };
 
 const saveArtist = async (artist: LookupArtistEntry) => {
@@ -189,6 +210,15 @@ const initializeSplit = (eventArtistId: number, artistName: string) => {
     { name: artistName, spotifyId: '', bandcampSlug: '', instagramHandle: '' },
     { name: '', spotifyId: '', bandcampSlug: '', instagramHandle: '' },
   ];
+  
+  // Initialize search queries for split artists
+  const artists = splitArtists.value[eventArtistId];
+  artists.forEach((artist, idx) => {
+    const searchKey = `${eventArtistId}-split-${idx}`;
+    if (!spotifySearchQuery.value[searchKey] && artist.name) {
+      spotifySearchQuery.value[searchKey] = artist.name;
+    }
+  });
 };
 
 const addSplitArtist = (eventArtistId: number) => {
@@ -196,6 +226,11 @@ const addSplitArtist = (eventArtistId: number) => {
   if (artists.length < 4) {
     artists.push({ name: '', spotifyId: '', bandcampSlug: '', instagramHandle: '' });
     splitArtists.value[eventArtistId] = [...artists];
+    
+    // Initialize search query for the new split artist
+    const newIndex = artists.length - 1;
+    const searchKey = `${eventArtistId}-split-${newIndex}`;
+    spotifySearchQuery.value[searchKey] = '';
   }
 };
 
@@ -492,52 +527,152 @@ onMounted(() => {
               <div
                 v-for="(splitArtist, idx) in splitArtists[artist.eventArtistId]"
                 :key="idx"
-                class="flex items-start gap-2 p-3 rounded-lg bg-base-100 border border-base-300"
+                class="space-y-3 p-3 rounded-lg bg-base-100 border border-base-300"
               >
-                <div class="flex-1 space-y-2">
-                  <input
-                    v-model="splitArtist.name"
-                    type="text"
-                    placeholder="Artist name"
-                    class="input-primary-sm w-full"
-                  />
-                  <div class="flex gap-2">
+                <div class="flex items-start gap-2">
+                  <div class="flex-1 space-y-2">
                     <input
-                      v-model="splitArtist.spotifyId"
+                      v-model="splitArtist.name"
                       type="text"
-                      placeholder="Spotify ID"
-                      class="input-primary-sm flex-1"
+                      placeholder="Artist name"
+                      class="input-primary-sm w-full"
                     />
-                    <input
-                      v-model="splitArtist.bandcampSlug"
-                      type="text"
-                      placeholder="Bandcamp"
-                      class="input-primary-sm flex-1"
-                    />
-                    <input
-                      v-model="splitArtist.instagramHandle"
-                      type="text"
-                      placeholder="Instagram"
-                      class="input-primary-sm flex-1"
-                    />
+                    
+                    <!-- Search Bar with Platform Buttons for Split Artist -->
+                    <div class="flex flex-wrap items-center gap-2">
+                      <input
+                        :value="spotifySearchQuery[`${artist.eventArtistId}-split-${idx}`] || splitArtist.name"
+                        type="text"
+                        placeholder="Search..."
+                        class="input-primary-sm w-48"
+                        @input="updateSearchQuery(`${artist.eventArtistId}-split-${idx}`, $event)"
+                        @keyup.enter="searchSpotify(`${artist.eventArtistId}-split-${idx}`)"
+                      />
+                      <button
+                        class="btn btn-sm gap-1 bg-spotify/10 hover:bg-spotify/20 text-spotify border-spotify/30"
+                        :disabled="spotifySearching[`${artist.eventArtistId}-split-${idx}`]"
+                        @click="searchSpotify(`${artist.eventArtistId}-split-${idx}`)"
+                        title="Search Spotify"
+                      >
+                        <span v-if="spotifySearching[`${artist.eventArtistId}-split-${idx}`]" class="loading loading-spinner loading-xs"></span>
+                        <svg v-else viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor">
+                          <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+                        </svg>
+                      </button>
+                      <a
+                        :href="`https://bandcamp.com/search?q=${encodeURIComponent(spotifySearchQuery[`${artist.eventArtistId}-split-${idx}`] || splitArtist.name)}&item_type=b`"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="btn btn-sm gap-1 bg-bandcamp/10 hover:bg-bandcamp/20 text-bandcamp border-bandcamp/30"
+                        title="Search Bandcamp"
+                      >
+                        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor">
+                          <path d="M0 18.75l7.437-13.5H24l-7.438 13.5z" />
+                        </svg>
+                      </a>
+                      <a
+                        :href="`https://www.instagram.com/explore/search/keyword/?q=${encodeURIComponent(spotifySearchQuery[`${artist.eventArtistId}-split-${idx}`] || splitArtist.name)}`"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="btn btn-sm gap-1 bg-instagram/10 hover:bg-instagram/20 text-instagram border-instagram/30"
+                        title="Search Instagram"
+                      >
+                        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor">
+                          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                        </svg>
+                      </a>
+                    </div>
+                    
+                    <!-- Spotify Results for Split Artist -->
+                    <div
+                      v-if="spotifyResults[`${artist.eventArtistId}-split-${idx}`]?.length"
+                      class="mt-2 rounded-lg border border-spotify/30 bg-spotify/5 max-h-60 overflow-y-auto"
+                    >
+                      <button
+                        v-for="result in spotifyResults[`${artist.eventArtistId}-split-${idx}`]"
+                        :key="result.SpotifyArtistId"
+                        type="button"
+                        class="flex w-full items-center gap-4 px-4 py-3 text-left hover:bg-spotify/10 transition-colors border-b border-spotify/10 last:border-b-0"
+                        @click="selectSpotifyResult(`${artist.eventArtistId}-split-${idx}`, result, true, idx, artist.eventArtistId)"
+                      >
+                        <!-- Artist Image -->
+                        <div v-if="result.ImageUrl" class="avatar shrink-0">
+                          <div class="h-12 w-12 rounded-lg">
+                            <img :src="result.ImageUrl" :alt="result.ArtistName" class="object-cover" />
+                          </div>
+                        </div>
+                        <div v-else class="bg-spotify/20 flex h-12 w-12 items-center justify-center rounded-lg shrink-0">
+                          <svg viewBox="0 0 24 24" class="text-spotify h-6 w-6" fill="currentColor">
+                            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+                          </svg>
+                        </div>
+                        
+                        <!-- Artist Info -->
+                        <div class="flex-1 min-w-0">
+                          <p class="font-semibold text-sm truncate">{{ result.ArtistName }}</p>
+                          <div v-if="result.Genres?.length" class="flex flex-wrap gap-1 mt-1">
+                            <span
+                              v-for="genre in result.Genres.slice(0, 3)"
+                              :key="genre"
+                              class="badge badge-xs bg-spotify/20 text-spotify border-0"
+                            >
+                              {{ genre }}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <!-- Popularity -->
+                        <div
+                          v-if="result.Popularity !== undefined"
+                          class="text-center shrink-0"
+                          :title="`Spotify popularity: ${result.Popularity}/100`"
+                        >
+                          <span class="text-sm font-bold" :class="getPopularityColor(result.Popularity)">
+                            {{ result.Popularity }}
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+                    
+                    <!-- Manual Entry Fields for Split Artist -->
+                    <div class="flex gap-2">
+                      <input
+                        v-model="splitArtist.spotifyId"
+                        type="text"
+                        placeholder="Spotify ID"
+                        class="input-primary-sm flex-1"
+                      />
+                      <input
+                        v-model="splitArtist.bandcampSlug"
+                        type="text"
+                        placeholder="Bandcamp"
+                        class="input-primary-sm flex-1"
+                      />
+                      <input
+                        v-model="splitArtist.instagramHandle"
+                        type="text"
+                        placeholder="Instagram"
+                        class="input-primary-sm flex-1"
+                      />
+                    </div>
                   </div>
-                </div>
-                <button
-                  v-if="(splitArtists[artist.eventArtistId]?.length || 0) > 1"
-                  class="btn btn-ghost btn-sm btn-circle"
-                  @click="removeSplitArtist(artist.eventArtistId, idx)"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="2"
-                    stroke="currentColor"
-                    class="h-4 w-4"
+                  <button
+                    v-if="(splitArtists[artist.eventArtistId]?.length || 0) > 1"
+                    class="btn btn-ghost btn-sm btn-circle"
+                    @click="removeSplitArtist(artist.eventArtistId, idx)"
                   >
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="2"
+                      stroke="currentColor"
+                      class="h-4 w-4"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
               <div class="flex gap-2">
                 <button
@@ -609,7 +744,7 @@ onMounted(() => {
                 </svg>
               </button>
               <a
-                :href="`https://bandcamp.com/search?q=${encodeURIComponent(spotifySearchQuery[artist.eventArtistId] || artist.artistName)}`"
+                :href="`https://bandcamp.com/search?q=${encodeURIComponent(spotifySearchQuery[artist.eventArtistId] || artist.artistName)}&item_type=b`"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="btn btn-sm gap-1 bg-bandcamp/10 hover:bg-bandcamp/20 text-bandcamp border-bandcamp/30"
